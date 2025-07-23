@@ -1,0 +1,308 @@
+﻿@model DashboardModel
+
+@{
+    // var firstTicketId = Model.callerIncidents.FirstOrDefault()?.Ticket?.Id
+    //         ?? Model.WatcherIncidents.FirstOrDefault()?.Ticket?.Id;
+}
+<style>
+    body {
+        background-color: #f4f9ff;
+        font-family: 'Segoe UI', sans-serif;
+        color: #333;
+    }
+
+    /* Primary button */
+    .btn-blue {
+        background-color: #1a73e8;
+        color: #fff;
+        border: none;
+    }
+
+        .btn-blue:hover {
+            background-color: #155ab6;
+        }
+
+    /* Card styling */
+    .card {
+        border: none;
+        box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    }
+
+    .card-header {
+        background-color: #1a73e8;
+        color: #fff;
+        font-weight: bold;
+    }
+
+    /* Info alert */
+    .alert-info {
+        background-color: #dbeefe;
+        border-left: 4px solid #1a73e8;
+        color: #1a73e8;
+    }
+
+    /* Select box */
+    .form-select {
+        border-color: #1a73e8;
+    }
+
+    .text-welcome {
+        color: #1a73e8;
+    }
+
+</style>
+
+<h2 class="text-welcome">Hello @ViewBag.username</h2>
+<div class="container mt-4">
+    <div class="mb-3">
+        <a asp-action="Index" class="btn btn-blue">Create New Ticket</a>
+        @* <a asp-action="Incident" class="btn btn-info">Open New Incident</a> *@
+        
+        @if (ViewBag.TicketId != null && (int)ViewBag.TicketId > 0)
+        {
+            <a href="@Url.Action("Incident", "Home", new { id = ViewBag.TicketId, tickid = ViewBag.TicketId })" class="btn btn-blue">
+                Create Incident
+            </a>
+        
+        }
+        else
+        {
+            <span class="text-muted">No valid ticket available to create incident.</span>
+        
+        }
+
+        @* <div class="card mb-4 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title card-header bg-info text-white fw-bold">Ticket Tools</h5>
+
+                <div class="d-flex flex-wrap gap-2">
+                    <a asp-action="Index" class="btn btn">
+                        <i class="fas fa-plus me-1"></i> Create New Ticket
+                    </a>
+
+                    @if (ViewBag.TicketId != null && (int)ViewBag.TicketId > 0)
+                    {
+                        <a href="@Url.Action("Incident", "Home", new { id = ViewBag.TicketId })" class="btn btn-info">
+                            <i class="fas fa-exclamation-circle me-1"></i> Create Incident
+                        </a>
+                    }
+                    else
+                    {
+                        <span class="text-muted align-self-center">
+                            <i class="fas fa-ban me-1"></i> No valid ticket available for incident.
+                        </span>
+                    }
+                </div>
+            </div>
+        </div> *@
+
+
+        @* <p class="fw-bold text-primary">
+            You are a:
+            @(Model.IsCaller && Model.IsWatcher ? "Caller and Watcher" :
+                        Model.IsCaller ? "Caller" :
+                        Model.IsWatcher ? "Watcher" :
+                        "")
+        </p> *@
+
+        <div class="alert alert-info fw-bold mb-4">
+            <i class="fas fa-user-check me-2 text-primary"></i>
+            You are a:
+            <span class="text-primary">
+                @(Model.IsCaller && Model.IsWatcher ? "Caller and Watcher" :
+                                Model.IsCaller ? "Caller" :
+                                Model.IsWatcher ? "Watcher" : "Unassigned")
+            </span>
+        </div>
+
+        @if (Model.IsCaller && Model.callerIncidents.Any())
+        {
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header">
+                    Your Caller Incidents
+                </div>
+                <div class="card-body">
+                    <form asp-controller="Home" asp-action="IncidentDetail" method="get">
+                        <label class="form-label">Select an incident:</label>
+                        <div class="input-group">
+                            <select name="incidentId" class="form-select">
+                                @foreach (var incident in Model.callerIncidents)
+                                {
+                                    <option value="@incident.Id">
+                                        Incident #@incident.Id – Ticket #@incident.Ticket?.Id – @incident.State
+                                    </option>
+                                }
+                            </select>
+                            <button type="submit" class="btn btn-blue">Open Incident</button>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+
+        }
+
+
+        @if (Model.IsWatcher && Model.WatcherIncidents.Any())
+        {
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header">
+                    Your Watcher Incidents
+                </div>
+                <div class="card-body">
+                    <form asp-controller="Home" asp-action="IncidentDetail" method="get">
+                        <label class="form-label">Select an incident:</label>
+                        <div class="input-group">
+                            <select name="incidentId" class="form-select">
+                                @foreach (var incident in Model.WatcherIncidents)
+                                {
+                                    <option value="@incident.Id">
+                                        Incident #@incident.Id – Ticket #@incident.Ticket?.Id – @incident.State
+                                    </option>
+                                }
+                            </select>
+                            <button type="submit" class="btn btn-blue">Open Incident</button>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+
+        }
+
+        @* @if (Model.IsCaller && Model.callerIncidents.Any())
+        {
+            <h3>Your Caller Incidents:</h3>
+            @* <ul>
+                @foreach (var incident in Model.callerIncidents)
+                {
+                    Console.WriteLine($"Incident ID: {incident.Id}");
+                    <li>
+                        <a asp-action="IncidentDetail" asp-route-incidentId="@incident.Id">
+                            Incident #@incident.Id – State: @incident.State
+                        </a>
+                    </li>
+                }
+            </ul> 
+            <form asp-controller="Home" asp-action="IncidentDetail" method="get">
+                <label class="form-label fw-bold">Select an incident:</label>
+                <select name="incidentId" class="form-select mb-3">
+                    @foreach (var incident in Model.callerIncidents)
+                    {
+                        <option value="@incident.Id">
+                            Incident #@incident.Id – Ticket #@incident.Ticket?.Id – @incident.State
+                        </option>
+                    }
+                </select>
+                <button type="submit" class="btn btn-outline-primary">Open Incident</button>
+            </form>
+
+        } *@
+        
+
+
+        @* @if (Model.IsCaller && Model.callerIncidents.Any())
+        {
+            <h3>Your Caller Incidents:</h3>
+            @* <ul>
+                @foreach (var incident in Model.callerIncidents)
+                {
+                    Console.WriteLine($"Incident ID: {incident.Id}");
+                    <li>
+                        <a asp-action="IncidentDetail" asp-route-incidentId="@incident.Id">
+                            Incident #@incident.Id – State: @incident.State
+                        </a>
+                    </li>
+                }
+            </ul> 
+            <form asp-controller="Home" asp-action="IncidentDetail" method="get">
+                <label class="form-label fw-bold">Select an incident:</label>
+                <select name="incidentId" class="form-select mb-3">
+                    @foreach (var incident in Model.callerIncidents)
+                    {
+                        <option value="@incident.Id">
+                            Incident #@incident.Id – Ticket #@incident.Ticket?.Id – @incident.State
+                        </option>
+                    }
+                </select>
+                <button type="submit" class="btn btn-outline-primary">Open Incident</button>
+            </form>
+
+        } *@
+        
+        
+        @* @if (Model.IsWatcher && Model.WatcherIncidents.Any()) 
+        {
+            <h3>Your Watched Incidents:</h3>
+
+            @* <ul>
+                @foreach (var incident in Model.WatcherIncidents)
+                {
+                    <li>
+                        <a asp-action="IncidentDetail" asp-route-incidentId="@incident.Id">
+                            Incident #@incident.Id – Ticket #@incident.Ticket?.Id – @incident.State
+                        </a>
+                    </li>
+                }
+            </ul> 
+            <form asp-controller="Home" asp-action="IncidentDetail" method="get">
+                <label class="form-label fw-bold">Select an incident:</label>
+                <select name="incidentId" class="form-select mb-3">
+                    @foreach (var incident in Model.WatcherIncidents)
+                    {
+                        <option value="@incident.Id">
+                            Incident #@incident.Id – Ticket #@incident.Ticket?.Id – @incident.State
+                        </option>
+                    }
+                </select>
+                <button type="submit" class="btn btn-outline-primary">Open Incident</button>
+            </form>
+        }*@
+
+        @if (!Model.IsCaller && !Model.IsWatcher)
+        {
+            <div class="alert alert-info">
+                You haven't created or watched any incidents yet.
+                <br />
+            </div>
+        }
+
+        
+
+        @* @if( Model.WatchedIncidents != null && Model.WatchedIncidents.Any())
+        {
+            @* <h3>Your Watched Incidents:</h3>
+            <ul>
+                @foreach (var incident in Model.WatchedIncidents)
+                {
+                    <li>
+                        <a asp-action="IncidentDetail" asp-route-id="@incident.Id">
+                            Incident #@incident.Id
+                        </a>
+                    </li>
+                }
+            </ul> *@
+
+           
+        @*         <form asp-controller="Home" asp-action="IncidentDetail" method="get">
+                    <label class="form-label fw-bold">Select an existing incident:</label>
+                    <select name="incidentId" class="form-select mb-3">
+                        @foreach (var incident in Model.WatchedIncidents)
+                        {
+                            <option value="@incident.Id">
+                                Incident #@incident.Id – Ticket #@incident.Ticket?.Id – @incident.State
+                            </option>
+                        }
+                    </select>
+                    <button type="submit" class="btn btn-outline-primary">Open Selected Incident</button>
+                </form>
+            
+        }
+        else
+        {
+            <p>You aren't watching any incidents yet.</p>
+        }  *@
+    </div>
+</div>
+
+

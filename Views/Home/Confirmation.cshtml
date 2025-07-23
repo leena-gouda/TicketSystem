@@ -1,0 +1,132 @@
+﻿@model Ticket
+@{
+    ViewData["Title"] = "Confirmation";
+    var ticketId = Model.Id;
+    // var allIncidents = ViewBag.AllIncidents as List<IncidentModel>; 
+}
+@Html.Raw(@"<style>
+    .text-welcome {
+        color: #1a73e8;
+    }
+
+    .btn-blue {
+        background-color: #1a73e8;
+        color: #fff;
+        border: none;
+        transition: background-color 0.3s ease;
+    }
+
+    .btn-blue:hover {
+        background-color: #155ab6;
+    }
+
+    .btn-outline-blue {
+        border: 2px solid #1a73e8;
+        color: #1a73e8;
+        background-color: transparent;
+        transition: all 0.3s ease;
+    }
+
+    .btn-outline-blue:hover {
+        background-color: #e8f0fe;
+    }
+
+    .card {
+        border: none;
+        border-radius: 0.5rem;
+        box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    }
+
+    .fade-in {
+        animation: fadeIn 0.7s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>")
+
+<div class="container mt-5">\
+    <h1 class="text-welcome fw-bold mb-4">Ticket Confirmation</h1>
+    <div class="alert alert-info fade-in">
+        <p>Your ticket <strong>#@Model.Id</strong> has been received.</p>
+        <p>Service Type: <strong>@Model.ServiceType</strong></p>
+    </div>
+    <div class="alert alert-info fade-in">
+        <i class="fas fa-clock me-2 text-primary"></i>
+        Redirecting you to the dashboard in a few seconds...
+    </div>
+
+    @* <div class="card p-4 mb-5">
+        <h5 class="text-welcome mb-3">What would you like to do next?</h5>
+        <div class="d-flex gap-3">
+            @* <a asp-action="Dashboard" class="btn btn-primary">Go to Dashboard</a> 
+            <a href="@Url.Action("Dashboard", "Home", new { ticketId = ticketId })" class="btn btn-blue rounded-pill px-4">
+                Go to Dashboard
+            </a>
+            <a href="@Url.Action("Create", "Home")" class="btn btn-outline-blue rounded-pill px-4">
+                Create Another Ticket
+            </a>
+
+            @* <form asp-action="Incident" method="get">
+        <input type="hidden" name="id" value="@Model.Id" />
+        <button type="submit" class="btn btn-secondary">Report a New Incident</button>
+    </form> 
+        </div> *@
+
+    </div>
+</div>
+
+<script>
+    setTimeout(function () {
+      window.location.href = '@Url.Action("Dashboard", "Home", new { ticketId = Model.Id })';
+    }, 5000);
+</script>
+
+@* @if (allIncidents != null && allIncidents.Any())
+{
+    <div class="mt-4">
+        <form asp-controller="Home" asp-action="IncidentDetail" method="get">
+            <label class="form-label fw-bold">Select an existing incident:</label>
+            <select name="incidentId" class="form-select mb-3">
+                @foreach (var incident in allIncidents)
+                {
+                    <option value="@incident.Id">
+                        Incident #@incident.Id – Ticket #@incident.Ticket?.Id – @incident.State
+                    </option>
+                }
+            </select>
+            <button type="submit" class="btn btn-outline-primary">Open Selected Incident</button>
+        </form>
+    </div>
+}
+else
+{
+    <div class="mt-4 alert alert-warning">
+        <p>No existing incidents found.</p>
+    </div>
+} *@
+@* <form asp-action="Incident" method="get">
+    <h1>Ticket submitted</h1>
+
+    <p>Your ticket <strong>#@Model.Id</strong> has been received.</p>
+    <p>Service Type: <strong>@Model.ServiceType</strong></p> 
+    <div style="margin-top: 20px;">
+        <a asp-action="Create" class="btn btn-primary">Create Another Ticket</a>
+        <input type="hidden" name="id" value="@Model.Id" />
+        <button type="submit" class="btn btn-secondary">Report an Incident</button>
+    </div>
+</form> *@
+
+
+    @* <div class="mb-3" asp-action="WatchList">
+        <label class="form-label">
+            <i class="fas fa-lock me-2"></i>
+            <a asp-action="WatchList" asp-route-tid="@Model.Id">
+                Watch List
+            </a>
+        </label>
+    </div> *@
+
+

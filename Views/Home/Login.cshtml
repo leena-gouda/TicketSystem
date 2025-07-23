@@ -1,0 +1,75 @@
+﻿@model LoginModel
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+<style>
+    .text-welcome {
+        color: #1a73e8;
+    }
+
+    .btn-blue {
+        background-color: #1a73e8;
+        color: #fff;
+        border: none;
+        transition: background-color 0.3s ease;
+    }
+
+        .btn-blue:hover {
+            background-color: #155ab6;
+        }
+
+    .form-control {
+        border-color: #1a73e8;
+        border-radius: 0.25rem;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #1a73e8;
+    }
+
+</style>
+<div class="container mt-4">
+    <div class="d-flex align-items-center mb-4">
+        <h2 class="text-welcome me-2">Welcome to our</h2>
+        <h2 class="text-welcome fw-bold">Ticketing system</h2>
+    </div>
+
+
+    <form asp-action="Login" method="post">
+        @* <div class="form-group mb-3">
+            <label asp-for="Name" class="form-label"></label>
+            <input asp-for="Name" class="form-control" />
+            <span asp-validation-for="Name" class="text-danger"></span>
+        </div> *@
+        <div class="form-group mb-3">
+            <label asp-for="Email" class="form-label"></label>
+            <input asp-for="Email" class="form-control" />
+            <span asp-validation-for="Email" class="text-danger"></span>
+        </div>
+
+        <div class="form-group mb-3">
+            <label asp-for="Password" class="form-label"></label>
+            <input asp-for="Password" class="form-control" type="password" />
+            <span asp-validation-for="Password" class="text-danger"></span>
+        </div>
+
+        @* <div class="form-group mb-3">
+            <label asp-for="Role" class="form-label"></label>
+            <input asp-for="Role" class="form-control" />
+            <span asp-validation-for="Role" class="text-danger"></span>
+        </div> *@
+
+        <div class="form-check mb-3">
+            <input asp-for="RememberMe" class="form-check-input" type="checkbox" />
+            <label asp-for="RememberMe" class="form-check-label">Remember Me</label>
+        </div>
+
+        <button type="submit" class="btn btn-blue mt-3">Login</button>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

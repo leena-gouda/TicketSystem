@@ -1,0 +1,60 @@
+﻿@Model List<Watcher>
+
+
+@{
+}
+@* <form>
+    <div class="Ticket">
+        <h2>Ticket #@Model.Id</h2>
+        <div id="watchers" class="watch-list">
+            <h3>Watchers</h3>
+            <ul>
+                @if (Model?.TicketWatchers != null)
+                {
+                    foreach (var tw in Model.TicketWatchers)
+                    {
+                        <li>@tw.Watcher.Name (@tw.Watcher.Role)</li>
+                    }
+                }
+                else
+                {
+                    <p>No watchers found for this ticket.</p>
+                }
+            </ul>
+        </div>
+    </div>
+</form> *@
+
+
+
+<form asp-action="WatchList" method="post">
+    <div class="container mt-4">
+            <div class="mb-3"><
+            <h2>Watchers available:</h2>
+            @* <div id="watchers" class="watch-list">
+                <label>
+                    <input type="checkbox" name="watcher" value="Omar"> Omar
+                </label><br>
+                <label>
+                    <input type="checkbox" name="watcher" value="Ahmed"> Ahmed
+                </label><br>
+                <label>
+                    <input type="checkbox" name="watcher" value="Sarah"> Sarah
+                </label><br>
+                <label>
+                    <input type="checkbox" name="watcher" value="Layla"> Layla
+                </label><br>
+                <button type="submit" onclick="window.history.back()">Submit</button>
+            </div> *@
+            @foreach (var watcher in Model.watcher)
+            {
+                <label>
+                        <input type="checkbox" name="selectedWatcherIds" value="@watcher.Id" />
+                        @watcher.Name
+                </label>
+                <br />
+            }
+            <button type="submit" class="btn-outline-primary">Confirm Watchers</button>
+        </div>
+    </div>
+</form>
