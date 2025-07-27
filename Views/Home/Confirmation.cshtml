@@ -4,7 +4,7 @@
     var ticketId = Model.Id;
     // var allIncidents = ViewBag.AllIncidents as List<IncidentModel>; 
 }
-@Html.Raw(@"<style>
+@* @Html.Raw(@"<style>
     .text-welcome {
         color: #1a73e8;
     }
@@ -45,7 +45,92 @@
         from { opacity: 0; transform: translateY(10px); }
         to { opacity: 1; transform: translateY(0); }
     }
+</style>") *@
+
+@Html.Raw(@"<style>
+    :root {
+    --nude-bg: #fdf8f3;
+    --nude-surface: #fff;
+    --nude-accent: #d4b49e;
+    --nude-accent-hover: #c6a086;
+    --nude-text: #5a4a3f;
+    --nude-muted: #a89b90;
+    --nude-border: #e3d6cb;
+    --nude-shadow: rgba(0, 0, 0, 0.06);
+    }
+
+    
+
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+    body {
+        background-color: var(--nude-bg);
+        font-family: 'Lora', serif;
+        color: var(--nude-text);
+    }
+
+    .text-welcome {
+        color: var(--nude-accent);
+        font-weight: 500;
+        letter-spacing: 0.5px;
+    }
+.btn-nude {
+        background-color: var(--nude-accent);
+        color: #fff;
+        padding: 0.6rem 1.2rem;
+        border-radius: 0.375rem;
+        font-size: 1rem;
+        border: none;
+        transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+        .btn-nude:hover {
+            background-color: var(--btn-hover);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+    .btn-outline-nude {
+        border: 2px solid var(--nude-primary);
+        color: var(--nude-primary);
+        background-color: transparent;
+        padding: 0.6rem 1.2rem;
+        border-radius: 0.375rem;
+        transition: all 0.3s ease;
+    }
+
+    .btn-outline-nude:hover {
+        background-color: var(--nude-light);
+        box-shadow: inset 0 0 0 1000px rgba(212,180,158,0.05);
+    }
+
+     .card {
+        border: none;
+        background-color: #fff;
+        box-shadow: 0 4px 12px var(--card-shadow);
+        border-radius: 0.75rem;
+    }
+
+    .card-header {
+        background-color: var(--nude-accent);
+        color: #fff;
+        font-weight: 600;
+        border-radius: 0.75rem 0.75rem 0 0;
+        padding: 1rem;
+    }
+
+    .fade-in {
+        animation: fadeIn 0.7s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
 </style>")
+
 
 <div class="container mt-5">\
     <h1 class="text-welcome fw-bold mb-4">Ticket Confirmation</h1>
