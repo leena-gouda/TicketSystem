@@ -19,7 +19,8 @@ namespace TicketSystem.Models
 
             [Required]
             [DataType(DataType.Password)]
-            [StringLength(100, MinimumLength = 5, ErrorMessage = "Password must be at least 5 characters.")]
+            [StringLength(100, MinimumLength = 8,ErrorMessage = "Password must be at least 8 characters.")]
+            [RegularExpression(@"^(?=.*[A-Z])(?=.*[\W_]).{8,}$", ErrorMessage = "Password must contain at least one uppercase letter and one special character.")]
             public string Password { get; set; }
 
             [Required]

@@ -41,6 +41,8 @@ namespace TicketSystem.Data
 
         public DbSet<Models.SignupModel> Signup { get; set; }
 
+        public DbSet<Admin> Admins { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -59,10 +61,12 @@ namespace TicketSystem.Data
                 .WithMany(w => w.TicketWatchers)
                 .HasForeignKey(tw => tw.WatcherId);
 
+            modelBuilder.Entity<Models.IncidentModel>()
+                .Property(i => i.State)
+                .HasConversion<int>();
 
 
 
-            
 
         }
 

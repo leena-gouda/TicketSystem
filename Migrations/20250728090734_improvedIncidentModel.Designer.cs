@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TicketSystem.Data;
 
@@ -11,9 +12,11 @@ using TicketSystem.Data;
 namespace TicketSystem.Migrations
 {
     [DbContext(typeof(TicketSystemDBContext))]
-    partial class TicketSystemDBContextModelSnapshot : ModelSnapshot
+    [Migration("20250728090734_improvedIncidentModel")]
+    partial class improvedIncidentModel
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -69,20 +72,11 @@ namespace TicketSystem.Migrations
                     b.Property<int>("CreateIncidentId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("IncidentsToReviewId")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsAdmin")
-                        .HasColumnType("bit");
-
                     b.Property<bool>("IsCaller")
                         .HasColumnType("bit");
 
                     b.Property<bool>("IsWatcher")
                         .HasColumnType("bit");
-
-                    b.Property<int?>("PendingIncidentId")
-                        .HasColumnType("int");
 
                     b.Property<int>("userId")
                         .HasColumnType("int");
@@ -90,10 +84,6 @@ namespace TicketSystem.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CreateIncidentId");
-
-                    b.HasIndex("IncidentsToReviewId");
-
-                    b.HasIndex("PendingIncidentId");
 
                     b.HasIndex("userId");
 
@@ -108,16 +98,13 @@ namespace TicketSystem.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int?>("AssignedAdminId")
+                    b.Property<int>("AssignedAdminId")
                         .HasColumnType("int");
 
                     b.Property<int?>("DashboardModelId")
                         .HasColumnType("int");
 
                     b.Property<int?>("DashboardModelId1")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("DashboardModelId2")
                         .HasColumnType("int");
 
                     b.Property<int>("State")
@@ -145,8 +132,6 @@ namespace TicketSystem.Migrations
                     b.HasIndex("DashboardModelId");
 
                     b.HasIndex("DashboardModelId1");
-
-                    b.HasIndex("DashboardModelId2");
 
                     b.HasIndex("TicketId");
 
@@ -374,14 +359,6 @@ namespace TicketSystem.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("TicketSystem.Models.IncidentModel", "IncidentsToReview")
-                        .WithMany()
-                        .HasForeignKey("IncidentsToReviewId");
-
-                    b.HasOne("TicketSystem.Models.IncidentModel", "PendingIncident")
-                        .WithMany()
-                        .HasForeignKey("PendingIncidentId");
-
                     b.HasOne("TicketSystem.Models.LoginModel", "user")
                         .WithMany()
                         .HasForeignKey("userId")
@@ -390,10 +367,6 @@ namespace TicketSystem.Migrations
 
                     b.Navigation("CreateIncident");
 
-                    b.Navigation("IncidentsToReview");
-
-                    b.Navigation("PendingIncident");
-
                     b.Navigation("user");
                 });
 
@@ -401,19 +374,17 @@ namespace TicketSystem.Migrations
                 {
                     b.HasOne("TicketSystem.Models.Admin", "AssignedAdmin")
                         .WithMany("AssignedIncidents")
-                        .HasForeignKey("AssignedAdminId");
-
-                    b.HasOne("TicketSystem.Models.DashboardModel", null)
-                        .WithMany("AssignedIncidents")
-                        .HasForeignKey("DashboardModelId");
+                        .HasForeignKey("AssignedAdminId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("TicketSystem.Models.DashboardModel", null)
                         .WithMany("WatcherIncidents")
-                        .HasForeignKey("DashboardModelId1");
+                        .HasForeignKey("DashboardModelId");
 
                     b.HasOne("TicketSystem.Models.DashboardModel", null)
                         .WithMany("callerIncidents")
-                        .HasForeignKey("DashboardModelId2");
+                        .HasForeignKey("DashboardModelId1");
 
                     b.HasOne("TicketSystem.Models.Ticket", "Ticket")
                         .WithMany()
@@ -514,8 +485,6 @@ namespace TicketSystem.Migrations
 
             modelBuilder.Entity("TicketSystem.Models.DashboardModel", b =>
                 {
-                    b.Navigation("AssignedIncidents");
-
                     b.Navigation("CreateTickets");
 
                     b.Navigation("WatcherIncidents");

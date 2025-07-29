@@ -3,6 +3,8 @@
 @{
     // var firstTicketId = Model.callerIncidents.FirstOrDefault()?.Ticket?.Id
     //         ?? Model.WatcherIncidents.FirstOrDefault()?.Ticket?.Id;
+    //var incidentToReview = Model.PendingIncident;
+   
 }
 @* <style>
     body {
@@ -53,7 +55,7 @@
 </style> *@
 
 
-<style>
+@Html.Raw(@"<style>
     :root {
         --nude-bg: #fdf8f3;
         --nude-surface: #fff;
@@ -141,11 +143,59 @@
         font-weight: 500;
         letter-spacing: 0.5px;
     }
-</style>
+    .modal-bottom {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      max-width: 500px;
+      width: 90%;
+      z-index: 1050;
+    }
+    @keyframes riseFromBottom {
+        0%
 
-<h2 class="text-welcome">Hello @ViewBag.username</h2>
+    {
+        opacity: 0;
+        transform: translateY(50px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    }
+
+    #feedbackModal .modal-dialog {
+        animation: riseFromBottom 0.6s ease-out;
+    }
+</style>")
+
+
+<div class="d-flex justify-content-between align-items-center mt-4 mb-3">
+    <h2 class="text-welcome">Hello @ViewBag.username</h2>
+    
+    @if (Model.IsCaller && Model.callerIncidents.Any())
+    {
+        <a href="@Url.Action("MyIncidents", "Home")" class="btn btn-nude rounded-pill px-4">
+            <i class="fas fa-clipboard-list"></i> Caller Incidents History
+        </a>
+    }
+</div>
+
+@* <h2 class="text-welcome">Hello @ViewBag.username</h2> *@
 <div class="container mt-4">
     <div class="mb-3">
+        @* @if(Model.IsCaller && Model.callerIncidents.Any())
+        {
+             <div class="d-flex justify-content-end mt-4 mb-5">
+               <a href="@Url.Action("MyIncidents", "Home")" class="btn  btn-nude rounded-pill px-4">
+                        <i class="fas fa-clipboard-list"></i> Caller Incidents History
+               </a>
+            </div>
+        } *@
+        
         <a asp-action="Index" class="btn btn-nude">Create New Ticket</a>
         @* <a asp-action="Incident" class="btn btn-info">Open New Incident</a> *@
         
@@ -160,6 +210,42 @@
         {
             <span class="text-muted">No valid ticket available to create incident.</span>
         
+        }
+
+        @if (ViewBag.userRole == "Manager")
+        {
+            <a href="@Url.Action("IncidentAssignList", "Home")" class="btn btn-nude">
+                Assign Admins
+            </a>
+            @* <div class="text-center mt-3">
+                <a href="@Url.Action("IncidentAssignList", "Home")" class="btn btn-nude">
+                    View Unassigned Incidents
+                </a>
+            </div> *@
+        }
+
+
+        @if (Model.IncidentsToReview != null && Model.IncidentsToReview.caller != null && Model.IncidentsToReview.caller.LoginId == ViewBag.userId)
+        {
+            <div id="feedbackModal" class="modal show" tabindex="-1" style="display:block; background-color: rgba(0,0,0,0.4);">
+                <div class="modal-dialog  modal-botttom" style="animation: riseFromBottom 0.6s ease-out;">
+                    <div class="modal-content" style="border-radius: 0.75rem; border: 1px solid var(--nude-border); box-shadow: 0 8px 16px var(--nude-shadow); background-color: var(--nude-surface);">
+                        <div class="modal-header" style="background-color: var(--nude-accent); border-bottom: none; color: #fff;">
+                            <h5 class="modal-title">Incident Feedback</h5>
+                        </div>
+                        <div class="modal-body" style="color: var(--nude-text); font-family: 'Lora', serif;">
+                            <p>Do you accept or reject this incident assignment?</p>
+                        </div>
+                        <div class="modal-footer" style="border-top: none;">
+                            <form asp-action="CallerFeedback" method="post" class="d-flex w-100 justify-content-around">
+                                <input type="hidden" name="incidentId" value="@Model.IncidentsToReview.Id" />
+                                <button name="accepted" value="true" type="submit" class="btn btn-nude">Accept</button>
+                                <button name="accepted" value="false" type="submit" class="btn btn-outline-nude">Reject</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
         }
 
         @* <div class="card mb-4 shadow-sm">
@@ -206,12 +292,19 @@
             </span>
         </div>
 
+         
+
         @if (Model.IsCaller && Model.callerIncidents.Any())
         {
             <div class="card mb-4 shadow-sm">
                 <div class="card-header">
                     Your Caller Incidents
                 </div>
+                @* <div class="text-center mt-4 mb-5">
+                   <a href="@Url.Action("MyIncidents", "Home")" class="btn  btn-nude rounded-pill px-4">
+                            <i class="fas fa-clipboard-list"></i> My Incidents
+                   </a>
+                </div> *@
                 <div class="card-body">
                     <form asp-controller="Home" asp-action="IncidentDetail" method="get">
                         <label class="form-label">Select an incident:</label>
@@ -358,6 +451,31 @@
             </div>
         }
 
+        @if (ViewBag.userRole == "Admin")
+        {
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header">
+                    Your Work in Progress Incidents
+                </div>
+                <div class="card-body">
+                    <form asp-controller="Home" asp-action="MarkAsDone" method="post">
+                        <label class="form-label">When finished Mark as Done</label>
+                        <div class="input-group">
+                            <select name="incidentId" class="form-select">
+                                @foreach (var incident in Model.AssignedIncidents)
+                                {
+                                    <option value="@incident.Id">
+                                        Incident #@incident.Id – @incident.State
+                                    </option>
+                                }
+                            </select>
+                            <button type="submit" class="btn btn-nude">Done</button>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+        }
         
 
         @* @if( Model.WatchedIncidents != null && Model.WatchedIncidents.Any())

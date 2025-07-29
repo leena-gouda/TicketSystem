@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace TicketSystem.Models
 {
-    public class LoginModel
+    public class LoginModel 
     {
       //  [Required]
         [Key]
@@ -28,8 +28,9 @@ namespace TicketSystem.Models
         public bool RememberMe { get; set; }
         public bool isCaller { get; set; }
         public bool isWatcher { get; set; }
+        public bool isAdmin { get; set; }
         //public Caller? caller { get; set; }
         //public Watcher? watcher { get; set; }
-        
+
     }
 }

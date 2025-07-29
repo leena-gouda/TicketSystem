@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TicketSystem.Data;
 
@@ -11,9 +12,11 @@ using TicketSystem.Data;
 namespace TicketSystem.Migrations
 {
     [DbContext(typeof(TicketSystemDBContext))]
-    partial class TicketSystemDBContextModelSnapshot : ModelSnapshot
+    [Migration("20250728105017_statechanges")]
+    partial class statechanges
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -69,9 +72,6 @@ namespace TicketSystem.Migrations
                     b.Property<int>("CreateIncidentId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("IncidentsToReviewId")
-                        .HasColumnType("int");
-
                     b.Property<bool>("IsAdmin")
                         .HasColumnType("bit");
 
@@ -90,8 +90,6 @@ namespace TicketSystem.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CreateIncidentId");
-
-                    b.HasIndex("IncidentsToReviewId");
 
                     b.HasIndex("PendingIncidentId");
 
@@ -115,9 +113,6 @@ namespace TicketSystem.Migrations
                         .HasColumnType("int");
 
                     b.Property<int?>("DashboardModelId1")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("DashboardModelId2")
                         .HasColumnType("int");
 
                     b.Property<int>("State")
@@ -145,8 +140,6 @@ namespace TicketSystem.Migrations
                     b.HasIndex("DashboardModelId");
 
                     b.HasIndex("DashboardModelId1");
-
-                    b.HasIndex("DashboardModelId2");
 
                     b.HasIndex("TicketId");
 
@@ -374,10 +367,6 @@ namespace TicketSystem.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("TicketSystem.Models.IncidentModel", "IncidentsToReview")
-                        .WithMany()
-                        .HasForeignKey("IncidentsToReviewId");
-
                     b.HasOne("TicketSystem.Models.IncidentModel", "PendingIncident")
                         .WithMany()
                         .HasForeignKey("PendingIncidentId");
@@ -389,8 +378,6 @@ namespace TicketSystem.Migrations
                         .IsRequired();
 
                     b.Navigation("CreateIncident");
-
-                    b.Navigation("IncidentsToReview");
 
                     b.Navigation("PendingIncident");
 
@@ -404,16 +391,12 @@ namespace TicketSystem.Migrations
                         .HasForeignKey("AssignedAdminId");
 
                     b.HasOne("TicketSystem.Models.DashboardModel", null)
-                        .WithMany("AssignedIncidents")
+                        .WithMany("WatcherIncidents")
                         .HasForeignKey("DashboardModelId");
 
                     b.HasOne("TicketSystem.Models.DashboardModel", null)
-                        .WithMany("WatcherIncidents")
-                        .HasForeignKey("DashboardModelId1");
-
-                    b.HasOne("TicketSystem.Models.DashboardModel", null)
                         .WithMany("callerIncidents")
-                        .HasForeignKey("DashboardModelId2");
+                        .HasForeignKey("DashboardModelId1");
 
                     b.HasOne("TicketSystem.Models.Ticket", "Ticket")
                         .WithMany()
@@ -514,8 +497,6 @@ namespace TicketSystem.Migrations
 
             modelBuilder.Entity("TicketSystem.Models.DashboardModel", b =>
                 {
-                    b.Navigation("AssignedIncidents");
-
                     b.Navigation("CreateTickets");
 
                     b.Navigation("WatcherIncidents");
