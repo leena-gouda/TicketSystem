@@ -319,7 +319,6 @@ namespace TicketSystem.Controllers
                     caller = callerEntity,
                     IncidentWatchers = ticket.TicketWatchers,
                     openDate = DateTime.Now,
-                    closedDate = DateTime.Today,
                     
                 };
 
