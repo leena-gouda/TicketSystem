@@ -310,6 +310,7 @@
                         <label class="form-label">Select an incident:</label>
                         <div class="input-group">
                             <select name="incidentId" class="form-select">
+                                <option disabled selected value="">Choose one...</option>
                                 @foreach (var incident in Model.callerIncidents)
                                 {
                                     <option value="@incident.Id">
@@ -338,6 +339,7 @@
                         <label class="form-label">Select an incident:</label>
                         <div class="input-group">
                             <select name="incidentId" class="form-select">
+                                <option disabled selected value="">Choose one...</option>
                                 @foreach (var incident in Model.WatcherIncidents)
                                 {
                                     <option value="@incident.Id">
@@ -462,6 +464,7 @@
                         <label class="form-label">When finished Mark as Done</label>
                         <div class="input-group">
                             <select name="incidentId" class="form-select">
+                                <option disabled selected value="">When Finished...Mark as Done</option>
                                 @foreach (var incident in Model.AssignedIncidents)
                                 {
                                     <option value="@incident.Id">

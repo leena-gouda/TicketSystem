@@ -107,6 +107,7 @@
                 <input type="hidden" name="incidentId" value="@incident.Id" />
                 <div class="col-md-8">
                     <select name="adminId" class="form-select" required>
+                        <option disabled selected value="">Select an Admin to assign</option>
                         @foreach (var admin in ViewBag.AvailableAdmins as List<LoginModel>)
                         {
                             <option value="@admin.Id">@admin.Name (@admin.Email)</option>
