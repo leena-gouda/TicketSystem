@@ -241,6 +241,15 @@
     .list-group-item {
         border-left: 4px solid var(--nude-primary);
     }
+
+    #watcherList {
+        display: flex;           /* Or use block */
+        flex-wrap: wrap;
+        margin-top: 1rem;
+        position: relative;      /* Prevent accidental overlay */
+        z-index: 1;              /* Keep it below labels */
+    }
+
 </style>")
 
 
@@ -368,26 +377,171 @@
         </div>
 
         <div class="mb-3">
+            <div id="watcherList" class="row d-none">
+                @if (ViewBag.Watchers is List<LoginModel> watchers && watchers.Any())
+                {
+                    @foreach (var watcher in ViewBag.Watchers as List<LoginModel>)
+                    {
+                        <div class="watcher-item col-md-4 mb-3" data-id="@watcher.Id" data-name="@watcher.Name" data-role="@watcher.Role"
+                            data-email="@watcher.Email">
+                            <div class="card h-100 shadow-sm select-watcher" style="cursor: pointer;">
+                                <div class="card-body text-center">
+                                    <h5 class="card-title">@watcher.Name</h5>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+            
+            </div>
+
             @if (Model?.Ticket?.TicketWatchers?.Any() == true)
             {
-                <label asp-for="Ticket.TicketWatchers" class="form-label">Watch list</label>
-                <label asp-for="Ticket.TicketWatchers" class="form-label">
-                    <i class="fas fa-lock me-2"></i>
-                </label>
-                <ul class="list-group">
-                @foreach (var watcher in Model.Ticket.TicketWatchers)
+                bool isCaller = Model.caller?.Login?.Id == ViewBag.userId;
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                     <div class="d-flex align-items-center gap-2">
+                         <label asp-for="Ticket.TicketWatchers" class="form-label">Watch list</label>
+                        <label asp-for="Ticket.TicketWatchers" class="form-label">
+                            <i class="fas fa-lock me-2"></i>
+                        </label>
+                     </div>
+                     @if (isCaller)
                     {
-                        var login = watcher?.Watcher?.Login;
-                        <li class="list-group-item">
-                        <strong>@login?.Name </strong> - @login?.Role (<em>@login?.Email </em>)
-                        </li>
-                    }
-                </ul>
+                        <div class="d-flex justify-content-end">
+                            <button class="btn btn-nude" id="editBtn" onclick="toggleEditMode()">Edit</button>
+                        </div> 
+                    }                    
+                </div>
+
+                if (isCaller)
+                {
+                    <div class="mb-3">
+                         <input type="text" id="searchBox" class="form-control mb-2 d-none" placeholder="Search for a name..." onkeyup="searchWatcher()" />
+                            <div id="selectedNames" class="list-group mb-2 d-none"></div>
+                            <div id="watcherList" class="row d-none fade-in"></div>
+                    </div>
+                }
+                <form asp-controller="Home" asp-action="Incident" asp-route-id="@Model.Id" method="post">
+
+                    <ul class="list-group" id="watchListContainer">
+
+                         @foreach (var watcher in Model.Ticket.TicketWatchers)
+                         {
+                              var login = watcher?.Watcher?.Login;
+                              <li class="list-group-item watch-item  fade-in" style="border-left: 4px solid var(--nude-accent); background-color: var(--nude-surface); color: var(--nude-text);"     data-id="@login?.Id" ondblclick="removeWatcher(this)">
+                                  <strong>@login?.Name </strong> - @login?.Role (<em>@login?.Email </em>)
+                                  @* <input type="hidden" id="@login?.Id" name="SelectedWatcherIds" value="@login?.Id" /> *@
+                                  @if (login?.Id != null)
+                                {
+                                    <input type="hidden" name="SelectedWatcherIds" value="@login.Id" />
+                                }
+
+                              </li>     
+                        }   
+                    </ul>
+                    <div id="submitBtnContainer" class="mt-3"></div>
+                </form>
             }
             
         </div>
+        <script>
+            function toggleEditMode() {
+                const list = document.getElementById('watchListContainer');
+                const searchBox = document.getElementById('searchBox');
+                const selectedNames = document.getElementById('selectedNames');
+                const watcherList = document.getElementById('watcherList');
+
+                list.classList.toggle('editable');
+                searchBox.classList.toggle('d-none');
+                selectedNames.classList.toggle('d-none');
+                watcherList.classList.add('d-none');
+            }
+
+            function removeWatcher(element) {
+                if (document.getElementById('watchListContainer').classList.contains('editable')) {
+                    element.remove();
+                }
+            }
+
+            function searchWatcher() {
+                const filter = document.getElementById("searchBox").value.toLowerCase();
+                const watcherList = document.getElementById("watcherList");
+                const items = watcherList.querySelectorAll(".watcher-item");
+
+                let matches = false;
+                items.forEach(item => {
+                    const name = item.getAttribute("data-name").toLowerCase();
+                    const isMatch = name.includes(filter) && filter !== "";
+                    item.classList.toggle("d-none", !isMatch);
+                    if (isMatch) 
+                    {
+                        item.classList.remove("d-none");
+                        matches = true;
+                    }
+                    else 
+                    {
+                        item.classList.add("d-none");
+                    }
+                });
+
+                watcherList.classList.toggle("d-none", !matches);
+            }
+            document.addEventListener("DOMContentLoaded", function () {
+                const watcherList = document.getElementById("watcherList");
+
+                watcherList.addEventListener("click", function (e) {
+                    const card = e.target.closest(".select-watcher");
+                    if (!card) return;
+
+                    const item = card.closest(".watcher-item");
+                    const name = item.getAttribute("data-name");
+                    const role = item.getAttribute("data-role") || "Role";
+                    const email = item.getAttribute("data-email") || "email@example.com";
+                    const id = item.getAttribute("data-id");
+                    const input = document.createElement("input");
+
+                    input.type = "hidden";
+                    input.name = "SelectedWatcherIds";
+                    input.value = id;
+
+                    const existing = Array.from(document.querySelectorAll("#watchListContainer .list-group-item"))
+                        .some(el => el.textContent.includes(name));
+                    if (existing) return;
+
+                    const li = document.createElement("li");
+                    li.className = "list-group-item watch-item";
+                    li.style.borderLeft = "4px solid var(--nude-accent)";
+                    li.style.backgroundColor = "var(--nude-surface)";
+                    li.style.color = "var(--nude-text)";
+                    li.innerHTML = `<strong>${name}</strong> - ${role} (<em>${email}</em>)`;
+                    li.setAttribute("data-id", id);
+                    li.appendChild(input);
+                    li.classList.add("fade-in");
+
+                    li.ondblclick = function () {
+                        this.remove();
+                    };
+                    
+                    console.log("Selected Watcher ID:", id);
+                    document.getElementById("watchListContainer").appendChild(li);
+
+                    const submitBtnContainer = document.getElementById("submitBtnContainer");
+                    if (!submitBtnContainer.querySelector("button")) {
+                        const submitBtn = document.createElement("button");
+                        submitBtn.type = "submit";
+                        submitBtn.className = "btn btn-nude";
+                        submitBtn.textContent = "Save Watchlist";
+                        submitBtnContainer.appendChild(submitBtn);
+                    }
+
+                });
+            });
+
+
+        </script>
     <div class="card p-4 mb-4">
         <form asp-controller="Home" asp-action="Incident" method="post">
+
             <input type="hidden" name="id" value="@Model.Id" />
             <div class="mb-3">
                 <label asp-for="AdditionalComments" class="form-label">Additional comments (caller visible) </label>
@@ -396,6 +550,8 @@
             </div>
         </form>
     </div>
+           
+
         @section Scripts {
         <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
         <script>

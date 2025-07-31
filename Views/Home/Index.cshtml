@@ -190,7 +190,7 @@
 
 </style>
 <div class="container mt-4">
-        <form asp-action="Create" method="post" enctype="multipart/form-data">
+        <form asp-action="Create" method="post" enctype="multipart/form-data" id="ticketForm">
             <div class="container mt-4">
                 <div class="mb-3">
                     <label asp-for="ServiceType" class="form-label fw-bold">* Service</label> <br />
@@ -299,7 +299,7 @@
 
                     <h4 class="mt-4 text-welcome">Selected Watchers:</h4>
                     <ul id="selectedWatchers" class="list-group"></ul>
-
+                    <div id="hiddenInputs"></div>
 
                 }
                 else
@@ -313,7 +313,7 @@
 
                 <div class="text-center">
                     <div class="mb-5">
-                        <button type="submit" class="btn btn-nude rounded-pill px-5">Submit</button>
+                        <button type="submit" class="btn btn-nude rounded-pill px-5" onclick="injectHiddenInputs()">Submit</button>
                     </div>
                 </div>
             </div>
@@ -321,6 +321,20 @@
         </form>
 </div>
 <script>
+    function injectHiddenInputs() {   
+        const container = document.getElementById("hiddenInputs");
+        container.innerHTML = ""; // Clear old inputs
+
+        const selectedItems = document.querySelectorAll("#selectedWatchers li[data-id]");
+        selectedItems.forEach(item => {
+            const id = item.getAttribute("data-id");
+            const input = document.createElement("input");
+            input.type = "hidden";
+            input.name = "SelectedWatcherIds";
+            input.value = id;
+            container.appendChild(input);
+        });
+    }
     document.addEventListener("DOMContentLoaded", function () {
         const searchBox = document.getElementById("searchBox");
         const watcherList = document.getElementById("watcherList");

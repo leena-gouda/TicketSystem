@@ -43,7 +43,7 @@ namespace TicketSystem.Controllers
             _context = context;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
             ViewBag.Watchers = GetAvailableWatchers();
             return View(new Ticket());
@@ -285,10 +285,11 @@ namespace TicketSystem.Controllers
 
             if (userId != null)
             {
-
-               // int userId = Convert.ToInt32(TempData["UserId"]);
+                ViewBag.userId = userId;
+                // int userId = Convert.ToInt32(TempData["UserId"]);
                 var incident = await _context.Incident
                     .Include(i => i.Ticket).ThenInclude(t => t.TicketWatchers).ThenInclude(tw => tw.Watcher).ThenInclude(w => w.Login)
+                    .Include(i => i.Ticket).ThenInclude(t => t.Login)
                     .Include(i => i.caller)
                     //.Include(i => i.IncidentWatchers).ThenInclude(tw => tw.Watcher)
                     .Include(i => i.previousComments)
@@ -301,9 +302,13 @@ namespace TicketSystem.Controllers
                     return View(incident);
                 }
                 var ticket = await _context.Tickets
+                    .Include(t => t.Login)
                     .Include(t => t.TicketWatchers)
                     .ThenInclude(tw => tw.Watcher).ThenInclude(w => w.Login)
                     .FirstOrDefaultAsync(t => t.Id == tickid);
+
+                ViewBag.Watchers = GetAvailableWatchers();
+
                 var existingIds = await _context.Tickets.Select(t => t.Id).ToListAsync();
                 _logger.LogInformation($"Valid ticket IDs: {string.Join(",", existingIds)}");
 
@@ -311,6 +316,7 @@ namespace TicketSystem.Controllers
 
                 await AddCallerAsync(userId);
                 var callerEntity = await _context.callers.FirstOrDefaultAsync(c => c.LoginId == userId);
+
 
                 await _context.SaveChangesAsync();
                 var newIncident = new IncidentModel
@@ -382,14 +388,15 @@ namespace TicketSystem.Controllers
         }
         
         [HttpPost]
-        public async Task<IActionResult> Incident(int id, string AdditionalComments)
-        {   
-            if (string.IsNullOrWhiteSpace(AdditionalComments))
-                return RedirectToAction("Incident", new { id });
+        public async Task<IActionResult> Incident(int id, string AdditionalComments, List<int> SelectedWatcherIds)
+        {
+            ViewBag.Watchers = GetAvailableWatchers();
+
 
             int userId = (int)HttpContext.Session.GetInt32("UserId");
             if (userId != null)
             {
+                ViewBag.userId = userId;
                 //int userId = Convert.ToInt32(TempData["UserId"]);
                 var incident = await _context.Incident
                     .Include(i => i.caller)
@@ -398,31 +405,111 @@ namespace TicketSystem.Controllers
 
                 if (incident == null || incident.caller == null) return NotFound();
 
-                var previousComment = new PreviousComments
+                //var watcherIds = Request.Form["SelectedWatcherIds"];
+                //foreach (var key in Request.Form.Keys)
+                //{
+                //    _logger.LogInformation($"Form key: {key}, Value: {Request.Form[key]}");
+                //}
+                if (SelectedWatcherIds.Count > 0)
                 {
-                    IncidentId = incident.Id,
-                    CommentText = AdditionalComments,
-                    ClosedTime = incident.closedDate,
-                    LoginId = userId,
-                    Login = await _context.Users.FindAsync(userId)
-                };
+                    var ticketId = incident.Ticket.Id;
+                    //var existingWatchers = _context.TicketWatchers.Where(tw => tw.TicketId == ticketId);
+                    //_context.TicketWatchers.RemoveRange(existingWatchers);
+                    //await _context.SaveChangesAsync();
 
-                _context.PreviousComments.Add(previousComment);
-                _logger.LogInformation("Attempting to save comment: " + previousComment.CommentText);
-                await _context.SaveChangesAsync();
-                _logger.LogInformation("Save completed.");
+
+                    foreach (int Id in SelectedWatcherIds)
+                    {
+                        var watcher = await _context.watcher.Include(w => w.Login).FirstOrDefaultAsync(w => w.LoginId == Id);
+                        var linkedWatchers = await _context.TicketWatchers
+                            .Where(tw => tw.TicketId == ticketId)
+                            .ToListAsync();
+
+                        _logger.LogInformation($"Found {linkedWatchers.Count} watchers for ticket {ticketId}");
+                        if (watcher != null)
+                        {
+                            bool alreadyLinked = await _context.TicketWatchers
+                                .AnyAsync(tw => tw.TicketId == ticketId && tw.WatcherId == watcher.Id);
+                            if (!alreadyLinked)
+                            {
+                                TicketWatcher ticketWatcher = new TicketWatcher
+                                {
+                                    TicketId = ticketId,
+                                    WatcherId = watcher.Id
+                                };
+                                _context.TicketWatchers.Add(ticketWatcher);
+                                var entry = _context.Entry(ticketWatcher);
+                                _logger.LogInformation($"State of newWatcher: {entry.State}");
+                            }
+                            else
+                            {
+                                _logger.LogInformation($"Watcher {watcher.Id} is already linked to ticket {ticketId}");
+                            }
+                            // _context.Entry(ticketWatcher).State = EntityState.Modified;
+                            
+                        }
+                        else
+                        {
+                            _logger.LogWarning($"Watcher not found for LoginId: {Id}");
+                        }
+                       
+                    }
+                  
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation($"AutoDetectChangesEnabled: {_context.ChangeTracker.AutoDetectChangesEnabled}");
+                    if (!_context.ChangeTracker.AutoDetectChangesEnabled)
+                    {
+                        _context.ChangeTracker.DetectChanges();
+
+                    }
+                    _logger.LogInformation($"Has changes: {_context.ChangeTracker.HasChanges()}");
+
+                }
+
+                if (!string.IsNullOrWhiteSpace(AdditionalComments))
+                {
+                    var previousComment = new PreviousComments
+                    {
+                        IncidentId = incident.Id,
+                        CommentText = AdditionalComments,
+                        ClosedTime = incident.closedDate,
+                        LoginId = userId,
+                        Login = await _context.Users.FindAsync(userId)
+                    };
+                    _context.PreviousComments.Add(previousComment);
+                    _logger.LogInformation("Attempting to save comment: " + previousComment.CommentText);
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation("Save completed.");
+
+                }
 
                 var updatedIncident = await _context.Incident
                     .Include(i => i.previousComments)
-                    .ThenInclude(c => c.Login)
+                        .ThenInclude(c => c.Login)
+                     .Include(i => i.Ticket)
+                        .ThenInclude(t => t.TicketWatchers)
+                        .ThenInclude(tw => tw.Watcher)
+                     .Include(i => i.IncidentWatchers)
                     .FirstOrDefaultAsync(i => i.Id == id);
+
+                var newWatchers = updatedIncident.Ticket.TicketWatchers;
+                if (updatedIncident.IncidentWatchers != null)
+                {
+                    updatedIncident.IncidentWatchers.Clear();
+                }
+                foreach (var watcher in newWatchers)
+                {
+                    updatedIncident.IncidentWatchers.Add(watcher);
+                }
 
                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
                 {
                     return PartialView("PreviousCommentsPartial", updatedIncident);
                 }
 
-                return RedirectToAction("Incident", new { id });
+                //return RedirectToAction("Incident", new { id });
+                //return RedirectToAction("IncidentDetail",updatedIncident.Id);
+                return RedirectToAction("Incident", new { incid = updatedIncident.Id, tickid = updatedIncident.Ticket.Id });
             }
             else
             {
@@ -486,6 +573,7 @@ namespace TicketSystem.Controllers
                 .Include(i => i.previousComments)
                 .FirstOrDefaultAsync(i => i.Id == incidentId);
 
+            ViewBag.Watchers = GetAvailableWatchers();
 
             if (incident == null)
             {
@@ -528,6 +616,8 @@ namespace TicketSystem.Controllers
                     //HttpContext.Session.SetString("UserRole", user.Role);
                     //TempData["UserId"] = user.Id;
                     HttpContext.Session.SetInt32("UserId", user.Id);
+
+                    await AddWatcherAsync(user.Id);
 
                     if (user.Role == "Admin")
                     {
@@ -729,6 +819,8 @@ namespace TicketSystem.Controllers
                 .Include(i => i.caller)
                     .ThenInclude(c => c.Login)
                 .FirstOrDefaultAsync(i => i.Id == incid);
+
+                
 
                 var dashboardModel = new DashboardModel
                 {
