@@ -19,6 +19,7 @@ using System.Xml.Linq;
 using TicketSystem.Data;
 using TicketSystem.Migrations;
 using TicketSystem.Models;
+using ClosedXML.Excel;
 
 
 
@@ -960,6 +961,9 @@ namespace TicketSystem.Controllers
                 return RedirectToAction("Login", "Home"); 
             }
 
+            var user = _context.Users.Where(u => u.Name == "John");
+            ViewBag.user = user;
+
             var myIncidents = _context.Incident
                 .Include(i => i.Ticket)
                 .Include(i => i.AssignedAdmin)
@@ -972,6 +976,49 @@ namespace TicketSystem.Controllers
 
             return View(myIncidents);
         }
+
+
+
+        public async Task<IActionResult> ExportToExcel()
+        {
+            var incidents = await _context.Incident
+                .Include(i => i.Ticket)
+                .Include(i => i.caller)
+                .Include(i => i.AssignedAdmin)
+                .ToListAsync();
+
+            using var workbook = new XLWorkbook();
+            var worksheet = workbook.Worksheets.Add("Incidents");
+
+            worksheet.Cell(1, 1).Value = "Incident Id";
+            worksheet.Cell(1, 2).Value = "Open Date";
+            worksheet.Cell(1, 3).Value = "Caller";
+            worksheet.Cell(1, 4).Value = "Short Description";
+            worksheet.Cell(1, 5).Value = "Assigned To";
+            worksheet.Cell(1, 6).Value = "State";
+            worksheet.Cell(1, 7).Value = "Updated At";
+
+            for (int i = 0; i < incidents.Count; i++)
+            {
+                var incident = incidents[i];
+                worksheet.Cell(i + 2, 1).Value = incident.Id;
+                worksheet.Cell(i + 2, 2).Value = incident.openDate;
+                worksheet.Cell(i + 2, 3).Value = incident.caller?.Login?.Name;
+                worksheet.Cell(i + 2, 4).Value = incident.Ticket?.ShortDescription;
+                worksheet.Cell(i + 2, 5).Value = incident.AssignedAdmin?.Login?.Name;
+                worksheet.Cell(i + 2, 6).Value = incident.State.ToString();
+                worksheet.Cell(i + 2, 7).Value = incident.UpdatedAt?.ToString("yyyy-MM-dd HH:mm");
+            }
+
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream);
+            stream.Position = 0;
+
+            return File(stream.ToArray(),
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        "IncidentHistory.xlsx");
+        }
+
 
         //[HttpPost]
         //public async Task<IActionResult> Incident(int id, string AdditionalComments)

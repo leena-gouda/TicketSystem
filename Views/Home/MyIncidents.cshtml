@@ -80,6 +80,8 @@
     </style>
 <h2 class="text-welcome"> My Incident History</h2>
 
+
+
 <table class="table table-bordered table-hover text-center theme-table">
     <thead>
         <tr>
@@ -92,24 +94,40 @@
             <th><i class="fas fa-clock"></i>Updated At</th>
         </tr>
     </thead>
+
     <tbody>
         @foreach (var incident in Model)
         {
+            
+            var assignedAdmin = incident.AssignedAdmin ?? ViewBag.user;
             <tr>
                 <td>@incident.Id</td>
                 <td>@incident.openDate</td>
                 <td>@incident.caller.Login.Name</td>
                 <td>@incident.Ticket.ShortDescription</td>
-                <td>@incident.AssignedAdmin.Login.Name</td>
+                <td>@(incident?.AssignedAdmin?.Login?.Name ?? "Unassigned")</td>
                 <td>@incident.State </td>
                 <td>@incident.UpdatedAt?.ToString("yyyy-MM-dd HH:mm")</td>
             </tr>
         }
     </tbody>
 </table>
+<div class="d-flex justify-content-center gap-3 mt-4 mb-5">
+    <div class="text-center mt-4 mb-3">
+        <a href="@Url.Action("ExportToExcel", "Home")" class="btn btn-nude rounded-pill px-4">
+            <i class="fas fa-file-excel me-2"></i> Download as Excel
+        </a>
+    </div>
 
-<div class="text-center mt-4 mb-5">
-    <a href="@Url.Action("Dashboard", "Home")" class="btn btn-nude rounded-pill px-4">
-        <i class="fas fa-tachometer-alt me-2"></i> Go to Dashboard
-    </a>
+    <div class="text-center mt-4 mb-5">
+        <a href="@Url.Action("Dashboard", "Home")" class="btn btn-nude rounded-pill px-4">
+            <i class="fas fa-tachometer-alt me-2"></i> Go to Dashboard
+        </a>
+    </div>
+
+
 </div>
+
+
+
+

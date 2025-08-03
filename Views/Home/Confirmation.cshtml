@@ -27,10 +27,10 @@
         transition: all 0.3s ease;
     }
 
-    .btn-outline-blue:hover {
-        background-color: #e8f0fe;
     }
 
+    .btn-outline-blue:hover {
+        background-color: #e8f0fe;
     .card {
         border: none;
         border-radius: 0.5rem;
@@ -165,7 +165,7 @@
 
 <script>
     setTimeout(function () {
-      window.location.href = '@Url.Action("Dashboard", "Home", new { ticketId = Model.Id })';
+      window.location.href = '@Url.Action("Incident", "Home", new { tickid = Model.Id })';
     }, 5000);
 </script>
 
