@@ -1,25 +1,28 @@
-﻿using Humanizer;
+﻿using ClosedXML.Excel;
+using DocumentFormat.OpenXml.Spreadsheet;
+using Humanizer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileSystemGlobbing;
 using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
 using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.View;
-using System.Text.Json;
 using System;
 using System.Data;
 using System.Diagnostics;
 using System.Linq;
+using System.Net;
+using System.Net.Mail;
 using System.Net.Sockets;
 using System.Net.WebSockets;
 using System.Security.Claims;
 using System.Security.Cryptography;
+using System.Text.Json;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using TicketSystem.Data;
 using TicketSystem.Migrations;
 using TicketSystem.Models;
-using ClosedXML.Excel;
 
 
 
@@ -112,8 +115,32 @@ namespace TicketSystem.Controllers
             {
                 return View("Login"); 
             }
+
+            var allowedExtensions = new[] { ".jpg", ".png", ".pdf", ".docx" };
+            var maxFileSize = 5 * 1024 * 1024;
+
+            
+
             if (uploadedFile != null && uploadedFile.Length > 0)
             {
+                var fileExtension = Path.GetExtension(uploadedFile.FileName).ToLower();
+
+                if (!allowedExtensions.Contains(fileExtension))
+                {
+                    // Reject file type
+                    ModelState.AddModelError("File", "This file type is not allowed.");
+                    TempData["FileError"] = "This file type is not allowed.";
+                    return RedirectToAction("Index");
+                }
+
+                if (uploadedFile.Length > maxFileSize)
+                {
+                    // Reject large files
+                    ModelState.AddModelError("File", "File size exceeds the allowed limit.");
+                    TempData["FileError"] = "This File size exceeds the allowed limit.";
+                    return RedirectToAction("Index");
+                }
+
                 var fileName = Path.GetFileName(uploadedFile.FileName);
                 var uploadPath = Path.Combine("wwwroot/uploads", fileName);
 
@@ -292,6 +319,7 @@ namespace TicketSystem.Controllers
                     .Include(i => i.Ticket).ThenInclude(t => t.TicketWatchers).ThenInclude(tw => tw.Watcher).ThenInclude(w => w.Login)
                     .Include(i => i.Ticket).ThenInclude(t => t.Login)
                     .Include(i => i.caller)
+                        .ThenInclude(c => c.Login)
                     //.Include(i => i.IncidentWatchers).ThenInclude(tw => tw.Watcher)
                     .Include(i => i.previousComments)
                     .FirstOrDefaultAsync(i => i.Id == incid);
@@ -300,6 +328,10 @@ namespace TicketSystem.Controllers
                 {
                     _logger.LogInformation($"Ticket ID: {incident.Ticket?.Id}, Watchers count: {incident.Ticket?.TicketWatchers?.Count ?? 0}");
 
+                    if (!string.IsNullOrEmpty(incident.Ticket.ServiceType) && ServiceAdminMap.ContainsKey(incident.Ticket.ServiceType))
+                    {
+                        incident.AssignedAdminId = ServiceAdminMap[incident.Ticket.ServiceType];
+                    }
                     return View(incident);
                 }
                 var ticket = await _context.Tickets
@@ -318,6 +350,8 @@ namespace TicketSystem.Controllers
                 await AddCallerAsync(userId);
                 var callerEntity = await _context.callers.FirstOrDefaultAsync(c => c.LoginId == userId);
 
+                
+
 
                 await _context.SaveChangesAsync();
                 var newIncident = new IncidentModel
@@ -334,9 +368,17 @@ namespace TicketSystem.Controllers
                     .Where(pc => pc.IncidentId == newIncident.Id)
                     .ToListAsync();
 
+                if (!string.IsNullOrEmpty(newIncident.Ticket.ServiceType) && ServiceAdminMap.ContainsKey(newIncident.Ticket.ServiceType))
+                {
+                    newIncident.AssignedAdminId = ServiceAdminMap[newIncident.Ticket.ServiceType];
+                }
+
                 _context.Incident.Add(newIncident);
                 await _context.SaveChangesAsync();
 
+                
+
+                ViewData["FromIncident"] = true;
                 return View(newIncident);
             }
             else
@@ -393,7 +435,6 @@ namespace TicketSystem.Controllers
         {
             ViewBag.Watchers = GetAvailableWatchers();
 
-
             int userId = (int)HttpContext.Session.GetInt32("UserId");
             if (userId != null)
             {
@@ -401,10 +442,16 @@ namespace TicketSystem.Controllers
                 //int userId = Convert.ToInt32(TempData["UserId"]);
                 var incident = await _context.Incident
                     .Include(i => i.caller)
+                        .ThenInclude(c => c.Login)
                     .Include(i => i.Ticket)
                     .FirstOrDefaultAsync(i => i.Id == id);
 
                 if (incident == null || incident.caller == null) return NotFound();
+
+                if (!string.IsNullOrEmpty(incident.Ticket.ServiceType) && ServiceAdminMap.ContainsKey(incident.Ticket.ServiceType))
+                {
+                    incident.AssignedAdminId = ServiceAdminMap[incident.Ticket.ServiceType];
+                }
 
                 //var watcherIds = Request.Form["SelectedWatcherIds"];
                 //foreach (var key in Request.Form.Keys)
@@ -438,6 +485,23 @@ namespace TicketSystem.Controllers
                                     TicketId = ticketId,
                                     WatcherId = watcher.Id
                                 };
+                                if (watcher.Login?.Email != null)
+                                {
+                                    var mail = new MailMessage();
+                                    mail.To.Add(watcher.Login.Email);
+                                    mail.Subject = $"You've been added to Incident #{incident.Id}";
+                                    mail.Body = $"Hello {watcher.Login.Name},\n\nYou've been added as a watcher to incident #{incident.Id}. You'll receive updates as the situation evolves.\n\nBest,\nIncident Team";
+                                    mail.From = new MailAddress(watcher.Login.Email);
+
+                                    var smtp = new SmtpClient("")
+                                    {
+                                        Port = 587,
+                                        Credentials = new NetworkCredential("", ""),
+                                        EnableSsl = true
+                                    };
+
+                                    smtp.Send(mail);
+                                }
                                 _context.TicketWatchers.Add(ticketWatcher);
                                 var entry = _context.Entry(ticketWatcher);
                                 _logger.LogInformation($"State of newWatcher: {entry.State}");
@@ -491,6 +555,8 @@ namespace TicketSystem.Controllers
                         .ThenInclude(t => t.TicketWatchers)
                         .ThenInclude(tw => tw.Watcher)
                      .Include(i => i.IncidentWatchers)
+                     .Include(i => i.caller)
+                         .ThenInclude(c => c.Login)
                     .FirstOrDefaultAsync(i => i.Id == id);
 
                 var newWatchers = updatedIncident.Ticket.TicketWatchers;
@@ -503,6 +569,7 @@ namespace TicketSystem.Controllers
                     updatedIncident.IncidentWatchers.Add(watcher);
                 }
 
+                
                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
                 {
                     return PartialView("PreviousCommentsPartial", updatedIncident);
@@ -571,8 +638,14 @@ namespace TicketSystem.Controllers
                         .ThenInclude(tw => tw.Watcher)
                             .ThenInclude(w => w.Login)
                 .Include(i => i.caller)
+                         .ThenInclude(c => c.Login)
                 .Include(i => i.previousComments)
                 .FirstOrDefaultAsync(i => i.Id == incidentId);
+
+            if (!string.IsNullOrEmpty(incident.Ticket.ServiceType) && ServiceAdminMap.ContainsKey(incident.Ticket.ServiceType))
+            {
+                incident.AssignedAdminId = ServiceAdminMap[incident.Ticket.ServiceType];
+            }
 
             ViewBag.Watchers = GetAvailableWatchers();
 
@@ -582,7 +655,7 @@ namespace TicketSystem.Controllers
                 return NotFound(); 
             }
 
-
+            ViewData["FromIncidentDetails"] = true;
             return View("Incident", incident);  
         }
         [HttpGet]
@@ -591,6 +664,7 @@ namespace TicketSystem.Controllers
             var incidents = await _context.Incident
                 .Include(i => i.Ticket)
                 .Include(i => i.caller)
+                    .ThenInclude(c => c.Login)
                 .Include(i => i.previousComments)
                 .ToListAsync();
 
@@ -1018,6 +1092,45 @@ namespace TicketSystem.Controllers
                         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                         "IncidentHistory.xlsx");
         }
+
+        public async Task<IActionResult> Search(int incidentId)
+        {
+            int currentUserId = (int)HttpContext.Session.GetInt32("UserId");
+
+            if (currentUserId == null)
+            {
+                return RedirectToAction("Login", "Home");
+            }
+            var incident = await _context.Incident
+                .Include(i => i.caller)
+                    .ThenInclude(c => c.Login)
+                .Include(i => i.Ticket)
+                    .ThenInclude(t => t.TicketWatchers)
+                    .ThenInclude(tw => tw.Watcher)
+                    .ThenInclude(w => w.Login)
+                .Where(i => i.Id == incidentId)
+                .FirstOrDefaultAsync();
+            //var incident = await _context.Incident
+            //    .Include(i => i.caller)
+            //    .Include(i => i.Ticket)
+            //    .FirstOrDefaultAsync(i => i.Id == incidentId);
+
+
+            if (incident == null || (incident.caller.LoginId != currentUserId && !incident.Ticket.TicketWatchers.Any(w => w.Watcher.LoginId == currentUserId)))
+            {
+                TempData["SearchError"] = "Incident not found or you don't have access.";
+                return RedirectToAction("Dashboard");
+            }
+            ViewData["FromSearch"] = true;
+            return View("Incident", incident); 
+        }
+
+        private static readonly Dictionary<string, int> ServiceAdminMap = new Dictionary<string, int>
+        {
+            { "Local",  1},
+            { "Global", 2 },
+            { "Support", 1 }
+        };
 
 
         //[HttpPost]

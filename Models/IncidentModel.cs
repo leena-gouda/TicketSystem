@@ -20,7 +20,11 @@ namespace TicketSystem.Models
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
+        public int TicketId { get; set; }
+        [ForeignKey("TicketId")]
         public Ticket Ticket { get; set; }
+        public int CallerId { get; set; }
+        [ForeignKey("CallerId")]
         public Caller caller { get; set; }
         public IncidentState State { get; set; } = IncidentState.Opened;
         public DateTime openDate { get; set; }

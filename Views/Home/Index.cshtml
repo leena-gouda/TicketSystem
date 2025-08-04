@@ -247,6 +247,11 @@
                     <input type="file" name="uploadedFile" id="fileInput" class="form-control mt-1" hidden />
                 </div>
 
+                @if (TempData["FileError"] != null)
+                {
+                    <div class="alert alert-danger">@TempData["FileError"]</div>
+                }
+
                 @* <div class="mb-3" asp-action="WatchList">
                 <label class="form-label">
                     <i class="fas fa-lock me-2"></i>

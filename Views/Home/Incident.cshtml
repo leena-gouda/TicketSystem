@@ -255,6 +255,7 @@
 
 
 <div class="container mt-4 fade-in">
+
         @* @if (!string.IsNullOrEmpty(Model.Ticket.AttachmentPath))
         {
             <div class="mb-3">
@@ -302,6 +303,33 @@
                 <a href="@(string.IsNullOrWhiteSpace(attachmentPath) || attachmentPath == "#" ? "#" : Url.Content(attachmentPath))" target="_blank" class="form-label">[view]</a>
                 @* <a href="@Url.Content(attachmentPath)" target="_blank" class="form-label">[view]</a> *@
                 <label class="form-label">@openDate</label>
+            </div>
+        }
+        @if (Model != null && ViewData["FromSearch"] != null)
+        {
+            <div class="mt-3">
+                <a href=" https://localhost:7078/Home/Search?incidentId=@Model.Id" target="_blank" class="btn btn-nude">
+                    Open in New Tab 🔗
+                </a>
+                <small>or copy: https://localhost:7078/Home/Search?incidentId=@Model.Id</small>
+            </div>
+        }
+        else if(Model != null && ViewData["FromIncidentDetails"] != null)
+        {
+            <div class="mt-3">
+                <a href=" https://localhost:7078/Home/IncidentDetail?incidentId=@Model.Id" target="_blank" class="btn btn-nude">
+                    Open in New Tab 🔗
+                </a>
+                <small>or copy: https://localhost:7078/Home/IncidentDetail?incidentId=@Model.Id</small>
+            </div>
+        }
+        else if(Model != null && ViewData["FromIncident"] != null)
+        {
+            <div class="mt-3">
+                <a href=" https://localhost:7078/Home/Incident?tickid=@Model.TicketId" target="_blank" class="btn btn-nude">
+                    Open in New Tab 🔗
+                </a>
+                <small>or copy: https://localhost:7078/Home/Incident?tickid=@Model.TicketId</small>
             </div>
         }
 

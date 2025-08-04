@@ -76,6 +76,18 @@
         font-weight: 500;
         letter-spacing: 0.5px;
     }
+
+    .copy-link-text {
+        font-size: 0.875rem; /* small text */
+        color: var(--nude-muted); /* or any soft accent color */
+        text-decoration: underline;
+        cursor: pointer;
+    }
+
+        .copy-link-text:hover {
+            color: var(--nude-accent-hover); /* optional hover effect */
+        }
+
     }
     </style>
 <h2 class="text-welcome"> My Incident History</h2>
@@ -99,9 +111,19 @@
         @foreach (var incident in Model)
         {
             
-            var assignedAdmin = incident.AssignedAdmin ?? ViewBag.user;
+            @* var assignedAdmin = incident.AssignedAdmin ?? ViewBag.user; *@
             <tr>
-                <td>@incident.Id</td>
+                <td>
+                    <a href="@Url.Action("IncidentDetail", "Home", new { incidentId = incident.Id })" target="_blank">
+                        @incident.Id
+                    </a><br>
+                    @* <button class="btn btn-nude ms-2 copy-btn" data-link="@Url.Action("IncidentDetail", "Home", new { incidentId = incident.Id })">
+                        Copy Link
+                    </button> *@
+                    <a href="#" class="copy-link-text ms-2" data-link="@Url.Action("IncidentDetail", "Home", new { incidentId = incident.Id })">
+                        Copy Link
+                    </a>
+                </td>
                 <td>@incident.openDate</td>
                 <td>@incident.caller.Login.Name</td>
                 <td>@incident.Ticket.ShortDescription</td>
@@ -131,3 +153,19 @@
 
 
 
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const links = document.querySelectorAll(".copy-link-text");
+
+        links.forEach(link => {
+            link.addEventListener("click", (e) => {
+                e.preventDefault();
+                const url = window.location.origin + link.getAttribute("data-link");
+                navigator.clipboard.writeText(url).then(() => {
+                    link.textContent = "Copied!";
+                    setTimeout(() => link.textContent = "Copy Link", 2000);
+                });
+            });
+        });
+    });
+</script>

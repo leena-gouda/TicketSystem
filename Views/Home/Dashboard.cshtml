@@ -186,6 +186,33 @@
 
 @* <h2 class="text-welcome">Hello @ViewBag.username</h2> *@
 <div class="container mt-4">
+
+    <div class="mb-3">
+         <form asp-action="Search" method="get" class="row gx-2">
+             <div class="col">
+                <input type="text" id="incidentInput" name="incidentId" placeholder="Enter Incident ID" class="form-control" oninput="toggleSearchButton()"/>
+             </div>            
+             <div class="col-auto">
+                <button type="submit" id="searchButton" class="btn btn-nude rounded-pill px-4" style="display:none;">Search</button>
+             </div>        
+         </form>
+        @if (TempData["SearchError"] != null)
+        {
+            <div class="alert alert-warning mt-2">@TempData["SearchError"]</div>
+        }
+    </div
+
+    @section Scripts 
+    {
+        <script>
+            function toggleSearchButton() {
+                const input = document.getElementById("incidentInput");
+                const button = document.getElementById("searchButton");
+                button.style.display = input.value.trim() ? "inline-block" : "none";
+            }
+        </script>
+    } 
+
     <div class="mb-3">
         @* @if(Model.IsCaller && Model.callerIncidents.Any())
         {
@@ -195,22 +222,24 @@
                </a>
             </div>
         } *@
+        <div class="mb-3">
+            <a asp-action="Index" class="btn btn-nude">Create New Ticket</a>
+            @if (ViewBag.TicketId != null && (int)ViewBag.TicketId > 0)
+            {
+                <a href="@Url.Action("Incident", "Home", new { id = ViewBag.TicketId, tickid = ViewBag.TicketId })" class="btn btn-nude">
+                    Create Incident
+                </a>
         
-        <a asp-action="Index" class="btn btn-nude">Create New Ticket</a>
+            }
+            else
+            {
+                <span class="text-muted">No valid ticket available to create incident.</span>
+        
+            }
+        </div>
         @* <a asp-action="Incident" class="btn btn-info">Open New Incident</a> *@
         
-        @if (ViewBag.TicketId != null && (int)ViewBag.TicketId > 0)
-        {
-            <a href="@Url.Action("Incident", "Home", new { id = ViewBag.TicketId, tickid = ViewBag.TicketId })" class="btn btn-nude">
-                Create Incident
-            </a>
         
-        }
-        else
-        {
-            <span class="text-muted">No valid ticket available to create incident.</span>
-        
-        }
 
         @if (ViewBag.userRole == "Manager")
         {
