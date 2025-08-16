@@ -1,0 +1,443 @@
+﻿@model IncidentModel
+@{
+    ViewData["Title"] = "Analytics Dashboard";
+}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+    :root {
+        --nude-bg: #fdf8f3;
+        --nude-surface: #fff;
+        --nude-accent: #d4b49e;
+        --nude-accent-hover: #c6a086;
+        --nude-text: #5a4a3f;
+        --nude-muted: #a89b90;
+        --nude-border: #e3d6cb;
+        --nude-shadow: rgba(0, 0, 0, 0.06);
+    }
+
+    .card {
+        margin-bottom: 20px;
+        border: none;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px var(--nude-shadow);
+        background-color: var(--nude-surface);
+        transition: transform 0.3s ease;
+    }
+
+        .card:hover {
+            transform: translateY(-2px);
+        }
+
+    .card-header {
+        font-weight: 600;
+        background-color: var(--nude-accent);
+        color: white;
+        padding: 15px 20px;
+        border-radius: 10px 10px 0 0 !important;
+    }
+
+    .card-body {
+        padding: 20px;
+        background-color: var(--nude-surface);
+        border-radius: 0 0 10px 10px;
+    }
+
+    canvas {
+        width: 100% !important;
+        height: 300px !important;
+    }
+
+    .alert {
+        margin-bottom: 20px;
+        border-radius: 8px;
+    }
+
+    .alert-info {
+        background-color: rgba(212, 180, 158, 0.15);
+        border-color: var(--nude-accent);
+        color: var(--nude-text);
+    }
+
+    .container {
+        background-color: var(--nude-bg);
+        padding: 20px;
+        border-radius: 10px;
+        margin-top: 20px;
+    }
+
+    h4 {
+        color: var(--nude-accent);
+        margin-bottom: 15px;
+    }
+
+    body {
+        background-color: var(--nude-bg);
+        color: var(--nude-text);
+    }
+</style>
+
+<div class="container mt-4 fade-in">
+    @* <div class="alert alert-info">
+        <h4>Debug Info</h4>
+        <div id="debugData"></div>
+    </div> *@
+
+    <div class="row">
+        <!-- Top Admins -->
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    Top Admins by Resolved Tickets
+                </div>
+                <div class="card-body">
+                    <canvas id="topAdminsChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Avg. Resolution Time -->
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    Avg. Resolution Time (Hours)
+                </div>
+                <div class="card-body">
+                    <canvas id="resolutionTimeChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rejected Work -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    Rejected Work by Developers
+                </div>
+                <div class="card-body">
+                    <canvas id="rejectedWorkChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                await loadAllCharts();
+            } catch (error) {
+                console.error("Dashboard initialization failed:", error);
+                showError(error);
+            }
+        });
+
+
+        async function loadAllCharts() {
+            try {
+                console.log("loadAllCharts called");
+                // Show loading state
+                //document.getElementById('debugData').innerHTML = '<div class="alert alert-info">Loading data...</div>';
+
+                // Fetch debug data first
+                const debugInfo = await fetchDebugData();
+                //renderDebugInfo(debugInfo);
+
+
+
+                // Check if we should render charts
+                if (shouldRenderCharts(debugInfo)) {
+                   console.log("in");
+
+                    // Render all charts in parallel
+                    await Promise.all([
+                        renderTopAdminsChart(),
+                        renderResolutionTimeChart(),
+                        renderRejectedWorkChart()
+                    ]);
+                } else {
+                     console.log("out");
+
+                    showNoDataWarning(debugInfo);
+                }
+            } catch (error) {
+                showError(error);
+            }
+        }
+
+        // Data fetching functions
+        async function fetchDebugData() {
+            try {
+                const response = await fetch('/Home/DebugDataCheck');
+
+                // 👇 Check for HTTP errors
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+                }
+
+                // 👇 Handle encoding issues
+                const rawText = await response.text();
+                const cleanText = rawText.replace(/^\uFEFF/, ''); // Remove BOM if present
+                const data = JSON.parse(cleanText);
+
+                // 👇 Validate data structure
+                if (!data || typeof data !== 'object') {
+                    throw new Error("Invalid data format");
+                }
+
+                return data;
+            } catch (error) {
+                console.error("DEBUG DATA FETCH FAILED:", error);
+                throw error;
+            }
+        }
+        async function fetchTopAdmins() {
+            console.log("fetchTopAdmins called");
+
+            const response = await fetch('/Home/GetTopAdmins');
+            if (!response.ok) throw new Error('Failed to load top admins data');
+            return await response.json();
+        }
+
+        async function fetchResolutionTimes() {
+            const response = await fetch('/Home/GetAdminResolutionTimes');
+            if (!response.ok) throw new Error('Failed to load resolution times');
+            return await response.json();
+        }
+
+        async function fetchRejectedWork() {
+            const response = await fetch('/Home/GetRejectedWork');
+            if (!response.ok) throw new Error('Failed to load rejected work data');
+            return await response.json();
+        }
+
+        // Rendering functions
+                      function renderDebugInfo(data) {
+            if (!data) {
+                document.getElementById('debugData').innerHTML = `
+                    <div class="alert alert-danger">
+                        Data failed to load. Check console.
+                    </div>
+                `;
+                return;
+            }
+
+            const html = `
+                <h4>Database Status</h4>
+                <p><strong>Total Incidents:</strong> ${data.totalIncidents ?? 'N/A'}</p>
+                <p><strong>Incidents with Admins:</strong> ${data.totalWithAdmins ?? 'N/A'}</p>
+                <p><strong>Completed Incidents:</strong></p>
+                <ul>
+                    <li>Done: ${data.doneCount ?? '0'}</li>
+                    <li>Rejected: ${data.rejectedCount ?? '0'}</li>
+                </ul>
+                <p><strong>Sample Admins:</strong> ${
+                    data.sampleAdmins?.join(", ") || "None"
+                }</p>
+            `;
+            document.getElementById('debugData').innerHTML = html;
+        }
+
+        async function renderTopAdminsChart() {
+            console.log("renderTopAdminsChart called");
+
+            const container = document.getElementById('topAdminsChart').closest('.card-body');
+            try {
+                const data = await fetchTopAdmins();
+
+                if (!data || data.length === 0) {
+                    container.innerHTML = '<div class="alert alert-info">No admin resolution data available</div>';
+                    return;
+                }
+
+                new Chart(
+                    document.getElementById('topAdminsChart'),
+                    {
+                        type: 'bar',
+                        data: {
+                            labels: data.map(row => row.admin),
+                            datasets: [{
+                                label: 'Resolved Tickets',
+                                data: data.map(row => row.resolvedCount),
+                                backgroundColor: '#36A2EB'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: { display: false },
+                                title: {
+                                    display: true,
+                                    text: 'Top Admins by Resolved Tickets'
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    title: {
+                                        display: true,
+                                        text: 'Resolved Count'
+                                    }
+                                }
+                            }
+                        }
+                    }
+                );
+            } catch (error) {
+                container.innerHTML = `<div class="alert alert-danger">Error loading admin data: ${error.message}</div>`;
+            }
+        }
+
+        async function renderResolutionTimeChart() {
+            const container = document.getElementById('resolutionTimeChart').closest('.card-body');
+            try {
+                const data = await fetchResolutionTimes();
+
+                if (!data || data.length === 0) {
+                    container.innerHTML = '<div class="alert alert-info">No resolution time data available</div>';
+                    return;
+                }
+
+                new Chart(
+                    document.getElementById('resolutionTimeChart'),
+                    {
+                        type: 'bar',
+                        data: {
+                            labels: data.map(row => row.admin),
+                            datasets: [{
+                                label: 'Avg. Hours',
+                                data: data.map(row => row.avgHours),
+                                backgroundColor: '#FF6384'
+                            }]
+                        },
+                        options: {
+                            indexAxis: 'y',
+                            responsive: true,
+                            plugins: {
+                                legend: { display: false },
+                                title: {
+                                    display: true,
+                                    text: 'Average Resolution Time (Hours)'
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            return `${context.raw.toFixed(2)} hours`;
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    beginAtZero: true,
+                                    title: {
+                                        display: true,
+                                        text: 'Hours'
+                                    }
+                                }
+                            }
+                        }
+                    }
+                );
+            } catch (error) {
+                container.innerHTML = `<div class="alert alert-danger">Error loading resolution data: ${error.message}</div>`;
+            }
+        }
+
+        async function renderRejectedWorkChart() {
+            const container = document.getElementById('rejectedWorkChart').closest('.card-body');
+            try {
+                const data = await fetchRejectedWork();
+
+                if (!data || data.length === 0) {
+                    container.innerHTML = '<div class="alert alert-info">No rejected work data available</div>';
+                    return;
+                }
+
+                new Chart(
+                    document.getElementById('rejectedWorkChart'),
+                    {
+                        type: 'doughnut',
+                        data: {
+                            labels: data.map(row => row.developer),
+                            datasets: [{
+                                label: 'Rejected Count',
+                                data: data.map(row => row.rejectedCount),
+                                backgroundColor: [
+                                    '#FF6384', '#36A2EB', '#FFCE56',
+                                    '#4BC0C0', '#9966FF', '#FF9F40'
+                                ]
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: {
+                                    position: 'right',
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Rejected Work Distribution'
+                                }
+                            }
+                        }
+                    }
+                );
+            } catch (error) {
+                container.innerHTML = `<div class="alert alert-danger">Error loading rejected work data: ${error.message}</div>`;
+            }
+        }
+
+        // Utility functions
+         function shouldRenderCharts(data) {
+            if (!data){
+                console.log("false");
+                return false;
+            }
+            return data.anyAdminsExist; // ✅ Always render if admins exist
+        }
+
+        function showNoDataWarning(data) {
+            const reasons = [];
+            if (data.totalIncidents === 0) reasons.push("No incidents exist in database");
+            if (!data.totalWithAdmins) reasons.push("No admin accounts found");
+            if (data.doneCount + data.acceptedCount + data.RejectedCount === 0) {
+                reasons.push("No incidents in Done/Accepted/Rejected states");
+            }
+
+            document.querySelectorAll('.card-body').forEach(container => {
+                if (!container.querySelector('canvas')) return;
+
+                container.innerHTML = `
+                    <div class="alert alert-warning">
+                        <h5>No data available</h5>
+                        <ul>${reasons.map(r => `<li>${r}</li>`).join('')}</ul>
+                    </div>
+                `;
+            });
+        }
+
+        function showError(error) {
+            console.error("Dashboard error:", error);
+            document.getElementById('debugData').innerHTML = `
+                <div class="alert alert-danger">
+                    <h5>Error loading dashboard</h5>
+                    <p>${error.message}</p>
+                    <small>Check console for details</small>
+                </div>
+            `;
+
+            document.querySelectorAll('.card-body').forEach(container => {
+                container.innerHTML = `
+                    <div class="alert alert-secondary">
+                        Chart unavailable due to loading error
+                    </div>
+                `;
+            });
+        }
+    </script>
+}

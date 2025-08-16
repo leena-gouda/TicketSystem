@@ -2,8 +2,6 @@
 using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using TicketSystem.Migrations;
-using TicketSystem.Views.Home;
 
 namespace TicketSystem.Models
 {
@@ -36,7 +34,5 @@ namespace TicketSystem.Models
         public ICollection<PreviousComments>? previousComments { get; set; }
         public int? AssignedAdminId { get; set; }
         public Admin AssignedAdmin { get; set; }
-
-
     }
 }

@@ -184,6 +184,14 @@
     }
 </div>
 
+@* <div>
+    
+        <a href="@Url.Action("Analytics", "Home")" class="btn btn-nude rounded-pill px-4">
+             Analytics
+        </a>
+    
+</div> *@
+
 @* <h2 class="text-welcome">Hello @ViewBag.username</h2> *@
 <div class="container mt-4">
 
@@ -222,20 +230,11 @@
                </a>
             </div>
         } *@
-        <div class="mb-3">
+        <div class="d-flex justify-content-between align-items-center mt-4 mb-3">
             <a asp-action="Index" class="btn btn-nude">Create New Ticket</a>
-            @if (ViewBag.TicketId != null && (int)ViewBag.TicketId > 0)
-            {
-                <a href="@Url.Action("Incident", "Home", new { id = ViewBag.TicketId, tickid = ViewBag.TicketId })" class="btn btn-nude">
-                    Create Incident
-                </a>
-        
-            }
-            else
-            {
-                <span class="text-muted">No valid ticket available to create incident.</span>
-        
-            }
+            <a href="@Url.Action("Analytics", "Home")" class="btn btn-nude rounded-pill px-4">
+             Analytics
+            </a>
         </div>
         @* <a asp-action="Incident" class="btn btn-info">Open New Incident</a> *@
         
@@ -483,7 +482,7 @@
             </div>
         }
 
-        @if (ViewBag.userRole == "Admin")
+        @if (ViewBag.userRole == "Admin" )
         {
             <div class="card mb-4 shadow-sm">
                 <div class="card-header">

@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileSystemGlobbing;
 using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
 using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.View;
+using Newtonsoft.Json;
 using System;
 using System.Data;
 using System.Diagnostics;
@@ -86,7 +87,7 @@ namespace TicketSystem.Controllers
         //    return $"{prefix}{nextNumber:D4}";
         //}
 
-        
+
         public async Task<IActionResult> Create(Ticket ticket, IFormFile? uploadedFile, List<int> SelectedWatcherIds)
         {
             //ticket.TicketWatchers = GenerateWatchers(ticket.Id);
@@ -113,13 +114,13 @@ namespace TicketSystem.Controllers
             }
             else
             {
-                return View("Login"); 
+                return View("Login");
             }
 
             var allowedExtensions = new[] { ".jpg", ".png", ".pdf", ".docx" };
             var maxFileSize = 5 * 1024 * 1024;
 
-            
+
 
             if (uploadedFile != null && uploadedFile.Length > 0)
             {
@@ -175,8 +176,8 @@ namespace TicketSystem.Controllers
                 ViewBag.Watchers = GetAvailableWatchers();
                 return View("Index", ticket);
             }
-   
-             
+
+
 
             //ticket.Id = _ticketList.Count;
             //_ticketList.Add(ticket);
@@ -231,9 +232,9 @@ namespace TicketSystem.Controllers
             }
             await _context.SaveChangesAsync();
 
-            
+
             //return RedirectToAction("Confirmation", new { id = ticket.Id });
-            return View("Confirmation",ticket);
+            return View("Confirmation", ticket);
         }
         public async Task<IActionResult> Confirmation(int id)
         {
@@ -245,7 +246,7 @@ namespace TicketSystem.Controllers
             if (ticket == null)
             {
                 _logger.LogWarning($"Ticket with ID {id} not found.");
-                return NotFound(); 
+                return NotFound();
             }
 
             //var allIncidents = await _context.Incident
@@ -257,29 +258,7 @@ namespace TicketSystem.Controllers
             return View(ticket);
         }
 
-        //private async Task<List<TicketWatcher>> GenerateWatchersAsync(int ticketId)
-        //{
-        //    //var watchersToAssign = await _context.watcher
-        //    //.Where(w => w.Role == "Manager" || w.Role == "Developer") 
-        //    //.ToListAsync();
-        //    var watchersToAssign = await _context.watcher
-        //    .Where(w => w.Login.caller || w.Login.watcher)
-        //    .ToListAsync();
-        //    //var watchers = new List<Watcher>
-        //    //{
-        //    //    new Watcher { Id = await GenerateNextIdAsync<Watcher>("W"), Name = "Hana", Role = "Manager", Email = "Hana@gmail.com" },
-        //    //    new Watcher { Id = await GenerateNextIdAsync<Watcher>("W"), Name = "Ahmed", Role = "Developer", Email = "Ahmed@gmail.com" }
-        //    //};
-
-        //    var ticketWatchers = watchersToAssign.Select(w => new TicketWatcher
-        //    {
-        //        TicketId = ticketId,
-        //        WatcherId = w.Id,
-        //        Watcher = w
-        //    }).ToList();
-
-        //    return ticketWatchers;
-        //}
+        
 
         private List<LoginModel> GetAvailableWatchers()
         {
@@ -289,147 +268,193 @@ namespace TicketSystem.Controllers
             return users;
         }
 
-        //public IActionResult Incident()
+
+
+        //[HttpGet]
+        //public async Task<IActionResult> Incident(int incid,int tickid)
         //{
-        //    var incident = new IncidentModel();
-        //    //incident.Ticket = ticket;
-        //    //incident.openDate = DateTime.Now;
-        //    //if(ticket.Watchers != null)
-        //    //{
-        //    //    incident.State = "Assigned";
-        //    //}
-        //    //else
-        //    //{
-        //    //    incident.State = "Not Assigned";
-        //    //}
-        //    //incident.Watcher = ticket.Watchers.FirstOrDefault();
-        //    return View(incident);
+        //    int userId = (int)HttpContext.Session.GetInt32("UserId");
+
+        //    if (userId != null)
+        //    {
+        //        ViewBag.userId = userId;
+        //        // int userId = Convert.ToInt32(TempData["UserId"]);
+        //        var incident = await _context.Incident
+        //            .Include(i => i.Ticket).ThenInclude(t => t.TicketWatchers).ThenInclude(tw => tw.Watcher).ThenInclude(w => w.Login)
+        //            .Include(i => i.Ticket).ThenInclude(t => t.Login)
+        //            .Include(i => i.caller)
+        //                .ThenInclude(c => c.Login)
+        //            //.Include(i => i.IncidentWatchers).ThenInclude(tw => tw.Watcher)
+        //            .Include(i => i.previousComments)
+        //            .FirstOrDefaultAsync(i => i.Id == incid);
+
+        //        if (incident != null)
+        //        {
+        //            _logger.LogInformation($"Ticket ID: {incident.Ticket?.Id}, Watchers count: {incident.Ticket?.TicketWatchers?.Count ?? 0}");
+
+        //            if (!string.IsNullOrEmpty(incident.Ticket.ServiceType) && ServiceAdminMap.ContainsKey(incident.Ticket.ServiceType))
+        //            {
+        //                incident.AssignedAdminId = ServiceAdminMap[incident.Ticket.ServiceType];
+        //            }
+        //            return View(incident);
+        //        }
+        //        var ticket = await _context.Tickets
+        //            .Include(t => t.Login)
+        //            .Include(t => t.TicketWatchers)
+        //            .ThenInclude(tw => tw.Watcher).ThenInclude(w => w.Login)
+        //            .FirstOrDefaultAsync(t => t.Id == tickid);
+
+        //        ViewBag.Watchers = GetAvailableWatchers();
+
+        //        var existingIds = await _context.Tickets.Select(t => t.Id).ToListAsync();
+        //        _logger.LogInformation($"Valid ticket IDs: {string.Join(",", existingIds)}");
+
+        //        if (ticket == null) return NotFound();
+
+        //        await AddCallerAsync(userId);
+        //        var callerEntity = await _context.callers.FirstOrDefaultAsync(c => c.LoginId == userId);
+
+
+
+
+        //        await _context.SaveChangesAsync();
+        //        var newIncident = new IncidentModel
+        //        {
+        //            Ticket = ticket,
+        //            caller = callerEntity,
+        //            IncidentWatchers = ticket.TicketWatchers,
+        //            openDate = DateTime.Now,
+
+        //        };
+
+        //        newIncident.previousComments = await _context.PreviousComments
+        //            .Include(pc => pc.Login)
+        //            .Where(pc => pc.IncidentId == newIncident.Id)
+        //            .ToListAsync();
+
+        //        if (!string.IsNullOrEmpty(newIncident.Ticket.ServiceType) && ServiceAdminMap.ContainsKey(newIncident.Ticket.ServiceType))
+        //        {
+        //            newIncident.AssignedAdminId = ServiceAdminMap[newIncident.Ticket.ServiceType];
+        //        }
+
+        //        _context.Incident.Add(newIncident);
+        //        await _context.SaveChangesAsync();
+
+
+
+        //        ViewData["FromIncident"] = true;
+        //        return View(newIncident);
+        //    }
+        //    else
+        //    {
+        //        return View("Login");
+        //    }
+
         //}
 
         [HttpGet]
-        public async Task<IActionResult> Incident(int incid,int tickid)
+        public async Task<IActionResult> Incident(int incid)
         {
             int userId = (int)HttpContext.Session.GetInt32("UserId");
+            if (userId == null) return View("Login");
 
-            if (userId != null)
+            ViewBag.userId = userId;
+            ViewBag.Watchers = GetAvailableWatchers();
+
+            var incident = await _context.Incident
+                .Include(i => i.Ticket)
+                    .ThenInclude(t => t.TicketWatchers)
+                    .ThenInclude(tw => tw.Watcher)
+                    .ThenInclude(w => w.Login)
+                .Include(i => i.Ticket)
+                    .ThenInclude(t => t.Login)
+                .Include(i => i.caller)
+                    .ThenInclude(c => c.Login)
+                .Include(i => i.previousComments)
+                    .ThenInclude(pc => pc.Login)
+                .FirstOrDefaultAsync(i => i.Id == incid);
+
+            if (incident == null) return NotFound();
+
+            if (incident.Ticket != null && !string.IsNullOrEmpty(incident.Ticket.ServiceType) && ServiceAdminMap.ContainsKey(incident.Ticket.ServiceType))
             {
-                ViewBag.userId = userId;
-                // int userId = Convert.ToInt32(TempData["UserId"]);
-                var incident = await _context.Incident
-                    .Include(i => i.Ticket).ThenInclude(t => t.TicketWatchers).ThenInclude(tw => tw.Watcher).ThenInclude(w => w.Login)
-                    .Include(i => i.Ticket).ThenInclude(t => t.Login)
-                    .Include(i => i.caller)
-                        .ThenInclude(c => c.Login)
-                    //.Include(i => i.IncidentWatchers).ThenInclude(tw => tw.Watcher)
-                    .Include(i => i.previousComments)
-                    .FirstOrDefaultAsync(i => i.Id == incid);
 
-                if (incident != null)
+                var adminId = ServiceAdminMap[incident.Ticket.ServiceType];
+                var admin = await _context.Admins
+                    .FirstOrDefaultAsync(a => a.Id == adminId);
+                if (admin != null)
                 {
-                    _logger.LogInformation($"Ticket ID: {incident.Ticket?.Id}, Watchers count: {incident.Ticket?.TicketWatchers?.Count ?? 0}");
+                    incident.AssignedAdminId = adminId;
+                    incident.AssignedAdmin = admin;
+                    incident.State = IncidentState.WorkinProgress;
+                    await _context.SaveChangesAsync();
 
-                    if (!string.IsNullOrEmpty(incident.Ticket.ServiceType) && ServiceAdminMap.ContainsKey(incident.Ticket.ServiceType))
-                    {
-                        incident.AssignedAdminId = ServiceAdminMap[incident.Ticket.ServiceType];
-                    }
-                    return View(incident);
+                    _logger.LogInformation($"Assigned admin: {admin.Id} - {admin.Login.Name}");
                 }
-                var ticket = await _context.Tickets
-                    .Include(t => t.Login)
-                    .Include(t => t.TicketWatchers)
-                    .ThenInclude(tw => tw.Watcher).ThenInclude(w => w.Login)
-                    .FirstOrDefaultAsync(t => t.Id == tickid);
-
-                ViewBag.Watchers = GetAvailableWatchers();
-
-                var existingIds = await _context.Tickets.Select(t => t.Id).ToListAsync();
-                _logger.LogInformation($"Valid ticket IDs: {string.Join(",", existingIds)}");
-
-                if (ticket == null) return NotFound();
-
-                await AddCallerAsync(userId);
-                var callerEntity = await _context.callers.FirstOrDefaultAsync(c => c.LoginId == userId);
-
-                
-
-
-                await _context.SaveChangesAsync();
-                var newIncident = new IncidentModel
+                else
                 {
-                    Ticket = ticket,
-                    caller = callerEntity,
-                    IncidentWatchers = ticket.TicketWatchers,
-                    openDate = DateTime.Now,
-                    
-                };
-
-                newIncident.previousComments = await _context.PreviousComments
-                    .Include(pc => pc.Login)
-                    .Where(pc => pc.IncidentId == newIncident.Id)
-                    .ToListAsync();
-
-                if (!string.IsNullOrEmpty(newIncident.Ticket.ServiceType) && ServiceAdminMap.ContainsKey(newIncident.Ticket.ServiceType))
-                {
-                    newIncident.AssignedAdminId = ServiceAdminMap[newIncident.Ticket.ServiceType];
+                    _logger.LogWarning($"Admin with ID {adminId} not found");
                 }
-
-                _context.Incident.Add(newIncident);
-                await _context.SaveChangesAsync();
-
-                
-
-                ViewData["FromIncident"] = true;
-                return View(newIncident);
             }
-            else
-            {
-                return View("Login");
-            }
-            //var incident = await _context.Incident
-            //.Include(i => i.Ticket)
-            //.ThenInclude(t => t.TicketWatchers)
-            //.ThenInclude(tw => tw.Watcher)
-            //.Include(i => i.previousComments)
-            //.FirstOrDefaultAsync(i => i.Ticket.Id == id);
 
-            //if (incident == null)
-            //{
-                //var existingIncidents = await _context.Incident
-                //.Where(i => i.Ticket.Id == id)
-                //.ToListAsync();
-                //if (existingIncidents.Any())
-                //{
-                //    ViewBag.TicketId = id;
-                //    return View("Confirmation", existingIncidents);  
-                //}
-
-                // var ticket = await _context.Tickets
-                //.Include(t => t.TicketWatchers)
-                //.ThenInclude(tw => tw.Watcher)
-                //.FirstOrDefaultAsync(t => t.Id == id);
-
-               // if (ticket == null) return NotFound();
-
-            //    var watcher = ticket.TicketWatchers.FirstOrDefault()?.Watcher;
-
-            //    incident = new Models.IncidentModel
-            //    {
-            //        Ticket = ticket,
-            //        Watcher = watcher,
-            //        IncidentWatchers = ticket.TicketWatchers,
-            //        openDate = DateTime.Now,
-            //        State = "Assigned",
-            //        closedDate = DateTime.Today,
-            //        previousComments = await _context.PreviousComments
-            //        .Where(pc => pc.IncidentId == id && pc.WatcherId == watcher.Id)
-            //        .ToListAsync()
-            //    };
-            //    _context.Incident.Add(incident);
-            //    await _context.SaveChangesAsync();
-            //}
-            //return View(incident);
+            return View(incident);
         }
-        
+
+        [HttpGet]
+        public async Task<IActionResult> CreateIncident(int tickid)
+        {
+            int userId = (int)HttpContext.Session.GetInt32("UserId");
+            if (userId == null) return View("Login");
+
+            var ticket = await _context.Tickets
+                .Include(t => t.Login)
+                .Include(t => t.TicketWatchers)
+                .ThenInclude(tw => tw.Watcher)
+                .ThenInclude(w => w.Login)
+                .FirstOrDefaultAsync(t => t.Id == tickid);
+
+            if (ticket == null) return NotFound();
+
+            await AddCallerAsync(userId);
+            var callerEntity = await _context.callers.FirstOrDefaultAsync(c => c.LoginId == userId);
+
+            var newIncident = new IncidentModel
+            {
+                Ticket = ticket,
+                caller = callerEntity,
+                IncidentWatchers = ticket.TicketWatchers,
+                openDate = DateTime.Now,
+            };
+
+            if (newIncident.Ticket != null && !string.IsNullOrEmpty(newIncident.Ticket.ServiceType) && ServiceAdminMap.ContainsKey(newIncident.Ticket.ServiceType))
+            {
+
+                var adminId = ServiceAdminMap[newIncident.Ticket.ServiceType];
+                var admin = await _context.Admins
+                    .FirstOrDefaultAsync(a => a.Id == adminId);
+                if (admin != null)
+                {
+                    newIncident.AssignedAdminId = adminId;
+                    newIncident.AssignedAdmin = admin;
+                    newIncident.State = IncidentState.WorkinProgress;
+                    await _context.SaveChangesAsync();
+
+                    //_logger.LogInformation($"Assigned admin: {admin.Id} - {admin.Login.Name}");
+                }
+                else
+                {
+                    _logger.LogWarning($"Admin with ID {adminId} not found");
+                }
+            }
+
+            _context.Incident.Add(newIncident);
+            await _context.SaveChangesAsync();
+
+            ViewData["FromIncident"] = true;
+            return RedirectToAction("Incident", new { incid = newIncident.Id });
+        }
+
+
         [HttpPost]
         public async Task<IActionResult> Incident(int id, string AdditionalComments, List<int> SelectedWatcherIds)
         {
@@ -485,23 +510,23 @@ namespace TicketSystem.Controllers
                                     TicketId = ticketId,
                                     WatcherId = watcher.Id
                                 };
-                                if (watcher.Login?.Email != null)
-                                {
-                                    var mail = new MailMessage();
-                                    mail.To.Add(watcher.Login.Email);
-                                    mail.Subject = $"You've been added to Incident #{incident.Id}";
-                                    mail.Body = $"Hello {watcher.Login.Name},\n\nYou've been added as a watcher to incident #{incident.Id}. You'll receive updates as the situation evolves.\n\nBest,\nIncident Team";
-                                    mail.From = new MailAddress(watcher.Login.Email);
+                                //if (watcher.Login?.Email != null)
+                                //{
+                                //    var mail = new MailMessage();
+                                //    mail.To.Add(watcher.Login.Email);
+                                //    mail.Subject = $"You've been added to Incident #{incident.Id}";
+                                //    mail.Body = $"Hello {watcher.Login.Name},\n\nYou've been added as a watcher to incident #{incident.Id}. You'll receive updates as the situation evolves.\n\nBest,\nIncident Team";
+                                //    mail.From = new MailAddress(watcher.Login.Email);
 
-                                    var smtp = new SmtpClient("")
-                                    {
-                                        Port = 587,
-                                        Credentials = new NetworkCredential("", ""),
-                                        EnableSsl = true
-                                    };
+                                //    var smtp = new SmtpClient("")
+                                //    {
+                                //        Port = 587,
+                                //        Credentials = new NetworkCredential("", ""),
+                                //        EnableSsl = true
+                                //    };
 
-                                    smtp.Send(mail);
-                                }
+                                //    smtp.Send(mail);
+                                //}
                                 _context.TicketWatchers.Add(ticketWatcher);
                                 var entry = _context.Entry(ticketWatcher);
                                 _logger.LogInformation($"State of newWatcher: {entry.State}");
@@ -511,15 +536,15 @@ namespace TicketSystem.Controllers
                                 _logger.LogInformation($"Watcher {watcher.Id} is already linked to ticket {ticketId}");
                             }
                             // _context.Entry(ticketWatcher).State = EntityState.Modified;
-                            
+
                         }
                         else
                         {
                             _logger.LogWarning($"Watcher not found for LoginId: {Id}");
                         }
-                       
+
                     }
-                  
+
                     await _context.SaveChangesAsync();
                     _logger.LogInformation($"AutoDetectChangesEnabled: {_context.ChangeTracker.AutoDetectChangesEnabled}");
                     if (!_context.ChangeTracker.AutoDetectChangesEnabled)
@@ -569,7 +594,7 @@ namespace TicketSystem.Controllers
                     updatedIncident.IncidentWatchers.Add(watcher);
                 }
 
-                
+
                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
                 {
                     return PartialView("PreviousCommentsPartial", updatedIncident);
@@ -577,31 +602,13 @@ namespace TicketSystem.Controllers
 
                 //return RedirectToAction("Incident", new { id });
                 //return RedirectToAction("IncidentDetail",updatedIncident.Id);
-                return RedirectToAction("Incident", new { incid = updatedIncident.Id, tickid = updatedIncident.Ticket.Id });
+                //return RedirectToAction("Incident", new { incid = updatedIncident.Id, tickid = updatedIncident.Ticket.Id });
+                return View(updatedIncident);
             }
             else
             {
                 return View("Login");
             }
-                //var incident = await _context.Incident.Include(i => i.Watcher).FirstOrDefaultAsync(i => i.Ticket.Id == id);
-            //if (incident == null || incident.Watcher == null) return NotFound();
-
-            //var watcher = await _context.watcher.FindAsync(watcherId);
-            //if (watcher == null) return BadRequest("Watcher not found");
-
-            //var previousComment = new PreviousComments
-            //{
-            //    IncidentId = incident.Id,
-            //    CommentText = AdditionalComments,
-            //    ClosedTime = incident.closedDate,
-            //    WatcherId = incident.Watcher.Id,      
-            //    Watcher = incident.Watcher
-            //};
-
-            //_context.PreviousComments.Add(previousComment);
-            //await _context.SaveChangesAsync();
-
-            //return RedirectToAction("Incident", new { id });
         }
 
         [HttpGet]
@@ -652,11 +659,11 @@ namespace TicketSystem.Controllers
             if (incident == null)
             {
                 _logger.LogWarning($"Incident with ID {incidentId} not found.");
-                return NotFound(); 
+                return NotFound();
             }
 
             ViewData["FromIncidentDetails"] = true;
-            return View("Incident", incident);  
+            return View("Incident", incident);
         }
         [HttpGet]
         public async Task<IActionResult> IncidentList()
@@ -668,7 +675,7 @@ namespace TicketSystem.Controllers
                 .Include(i => i.previousComments)
                 .ToListAsync();
 
-            return View(incidents); 
+            return View(incidents);
         }
 
         [HttpGet]
@@ -701,7 +708,7 @@ namespace TicketSystem.Controllers
                     var incidentToReview = await _context.Incident
                         .Include(i => i.caller).ThenInclude(c => c.Login)
                         .FirstOrDefaultAsync(i => i.caller.LoginId == user.Id
-                                          && i.State == IncidentState.Done);     
+                                          && i.State == IncidentState.Done);
 
                     if (incidentToReview != null)
                     {
@@ -711,7 +718,7 @@ namespace TicketSystem.Controllers
                     return RedirectToAction("Dashboard", "Home");
                 }
                 var signupUser = await _context.Signup.FirstOrDefaultAsync(s => s.Email == login.Email && s.Password == login.Password);
-                if(signupUser != null)
+                if (signupUser != null)
                 {
                     var newUser = new LoginModel
                     {
@@ -719,7 +726,7 @@ namespace TicketSystem.Controllers
                         Email = signupUser.Email,
                         Password = signupUser.Password,
                         Role = signupUser.Role,
-                        
+
                     };
                     await _context.Users.AddAsync(newUser);
                     await _context.SaveChangesAsync();
@@ -808,7 +815,7 @@ namespace TicketSystem.Controllers
             }
         }
 
-        public async Task<IActionResult> Dashboard(int? ticketId,int? incid)
+        public async Task<IActionResult> Dashboard(int? ticketId, int? incid)
         {
             int userId = (int)HttpContext.Session.GetInt32("UserId");
             ViewBag.TicketId = ticketId;
@@ -817,7 +824,7 @@ namespace TicketSystem.Controllers
                 .Select(i => i.Id)
                 .FirstOrDefaultAsync();
 
-            ViewBag.IncidentId = incidentId ;
+            ViewBag.IncidentId = incidentId;
             var user = _context.Users.FirstOrDefault(u => u.Id == userId);
             ViewBag.username = user?.Name;
             ViewBag.userId = userId;
@@ -848,7 +855,7 @@ namespace TicketSystem.Controllers
                     Id = i.Id,
                     Ticket = i.Ticket,
                     openDate = i.openDate,
-                    closedDate =i.closedDate,
+                    closedDate = i.closedDate,
                     State = i.State
                 })
                 .ToListAsync();
@@ -895,7 +902,7 @@ namespace TicketSystem.Controllers
                     .ThenInclude(c => c.Login)
                 .FirstOrDefaultAsync(i => i.Id == incid);
 
-                
+
 
                 var dashboardModel = new DashboardModel
                 {
@@ -912,7 +919,7 @@ namespace TicketSystem.Controllers
             }
             else
             {
-                
+
                 return View("Login");
             }
         }
@@ -934,7 +941,7 @@ namespace TicketSystem.Controllers
                 if (userExists)
                 {
                     ModelState.AddModelError("Email", "An account with this email already exists.");
-                    return View(model); 
+                    return View(model);
                 }
                 if (model.Password == model.ConfirmPassword)
                 {
@@ -947,21 +954,21 @@ namespace TicketSystem.Controllers
                         Role = model.Role,
                     };
 
-                    
+
                     _context.Signup.Add(user);
 
-                    
+
                 }
                 await _context.SaveChangesAsync();
                 return RedirectToAction("Login");
             }
 
-            
+
             return View(model);
         }
 
         [HttpGet]
-    
+
         public async Task<IActionResult> IncidentAssignList()
         {
             var openIncidents = await _context.Incident
@@ -980,7 +987,7 @@ namespace TicketSystem.Controllers
 
 
         [HttpPost]
-   
+
         public IActionResult AssignToAdmin(int incidentId, int adminId)
         {
             var incident = _context.Incident.FirstOrDefault(i => i.Id == incidentId);
@@ -998,7 +1005,7 @@ namespace TicketSystem.Controllers
         }
 
         [HttpPost]
-       
+
         public IActionResult MarkAsDone(int incidentId)
         {
             var incident = _context.Incident.FirstOrDefault(i => i.Id == incidentId);
@@ -1012,7 +1019,7 @@ namespace TicketSystem.Controllers
         }
 
         [HttpPost]
-        
+
         public IActionResult CallerFeedback(int incidentId, bool accepted)
         {
             var incident = _context.Incident.FirstOrDefault(i => i.Id == incidentId);
@@ -1032,7 +1039,7 @@ namespace TicketSystem.Controllers
 
             if (userId == null)
             {
-                return RedirectToAction("Login", "Home"); 
+                return RedirectToAction("Login", "Home");
             }
 
             var user = _context.Users.Where(u => u.Name == "John");
@@ -1122,7 +1129,7 @@ namespace TicketSystem.Controllers
                 return RedirectToAction("Dashboard");
             }
             ViewData["FromSearch"] = true;
-            return View("Incident", incident); 
+            return View("Incident", incident);
         }
 
         private static readonly Dictionary<string, int> ServiceAdminMap = new Dictionary<string, int>
@@ -1132,92 +1139,204 @@ namespace TicketSystem.Controllers
             { "Support", 1 }
         };
 
+        [HttpGet]
+        public async Task<JsonResult> GetTopAdmins()
+        {
+            try
+            {
+                var admins = await _context.Incident
+                    .Include(i => i.AssignedAdmin)
+                    .ThenInclude(a => a.Login)
+                    .Where(i => (i.State == IncidentState.Done ||
+                        i.State == IncidentState.Accepted ||
+                        i.State == IncidentState.Rejected) && i.AssignedAdmin != null)
+                    .GroupBy(i => i.AssignedAdmin.Login.Name)
+                    .Select(g => new {
+                        Admin = g.Key,
+                        ResolvedCount = g.Count()
+                    })
+                    .OrderByDescending(a => a.ResolvedCount)
+                    .ThenBy(a => a.Admin)
+                    .Take(5)
+                    .ToListAsync();
 
-        //[HttpPost]
-        //public async Task<IActionResult> Incident(int id, string AdditionalComments)
+                _logger.LogInformation("Top admins count: {Count}", admins.Count);
+
+                _logger.LogInformation("Filtered count: {count}", await _context.Incident
+                    .Where(i => (i.State == IncidentState.Done ||
+                                 i.State == IncidentState.Accepted ||
+                                 i.State == IncidentState.Rejected) &&
+                                i.AssignedAdmin != null)
+                    .CountAsync());
+                _logger.LogInformation("Top Admins: {data}", JsonConvert.SerializeObject(admins));
+
+                return Json(admins);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching top admins");
+                return Json(new { error = ex.Message });
+            }
+        }
+
+
+        [HttpGet]
+        public async Task<JsonResult> GetAdminResolutionTimes()
+        {
+            // First get raw data from database
+            var rawData = await _context.Incident
+                .Include(i => i.AssignedAdmin)
+                .ThenInclude(a => a.Login)
+                .Where(i => (i.State == IncidentState.Done ||
+            i.State == IncidentState.Accepted ||
+            i.State == IncidentState.Rejected) && i.AssignedAdmin != null)
+                .Select(i => new {
+                    Admin = i.AssignedAdmin.Login.Name,
+                    OpenDate = i.openDate,
+                    ClosedDate = i.closedDate
+                })
+                .ToListAsync();
+            _logger.LogInformation("rawData: {rawData}", System.Text.Json.JsonSerializer.Serialize(rawData));
+            // Calculate averages in memory
+            var results = rawData
+                .GroupBy(x => x.Admin)
+                .Select(g => new {
+                    Admin = g.Key,
+                    AvgHours = g.Average(x =>
+                        x.ClosedDate.HasValue && x.OpenDate != null
+                            ? (x.ClosedDate.Value - x.OpenDate).TotalHours
+                            : 0)
+                })
+                .OrderBy(x => x.AvgHours)
+                .ToList();
+            _logger.LogInformation("results: {results}", System.Text.Json.JsonSerializer.Serialize(results));
+
+            return Json(results);
+        }
+
+        [HttpGet]
+        public async Task<JsonResult> GetRejectedWork()
+        {
+            var rejected = await _context.Incident
+                .Include(i => i.AssignedAdmin)
+                .ThenInclude(a => a.Login)
+                .Where(i => i.State == IncidentState.Rejected)
+                .GroupBy(i => i.AssignedAdmin != null ? i.AssignedAdmin.Login.Name : "Unassigned")
+                .Select(g => new {
+                    Developer = g.Key,
+                    RejectedCount = g.Count(),
+                    ExampleIds = g.Take(3).Select(x => x.Id)
+                })
+                .OrderByDescending(d => d.RejectedCount)
+                .ToListAsync();
+            _logger.LogInformation("rejected: {rejected}", System.Text.Json.JsonSerializer.Serialize(rejected));
+
+            return Json(rejected);
+        }
+
+        public IActionResult Analytics()
+        {
+            return View();
+        }
+        [HttpGet]
+        public async Task<IActionResult> DebugDataCheck()
+        {
+            var incidents = await _context.Incident.ToListAsync();
+            var admins = await _context.Admins.Include(a => a.Login).ToListAsync();
+
+            var data = new
+            {
+                TotalIncidents = incidents.Count,
+                TotalWithAdmins = incidents.Count(i => i.AssignedAdminId != null),
+                DoneCount = incidents.Count(i => i.State == IncidentState.Done),
+                AcceptedCount = incidents.Count(i => i.State == IncidentState.Accepted), // ✅ ADD THIS
+                RejectedCount = incidents.Count(i => i.State == IncidentState.Rejected),
+                AnyAdminsExist = admins.Any(),
+                SampleAdmins = admins.Take(3).Select(a => a.Login?.Name ?? "No Name")
+            };
+
+            _logger.LogInformation(_context.Database.GetConnectionString());
+            _logger.LogInformation($"totalincident {data.TotalIncidents}");
+            _logger.LogInformation($"totalAdmins {data.TotalWithAdmins}");
+            _logger.LogInformation($"DoneCount {data.DoneCount}");
+            _logger.LogInformation($"AcceptedCount {data.AcceptedCount}");
+            _logger.LogInformation($"RejectedCount {data.RejectedCount}");
+            _logger.LogInformation($"AnyAdminsExist {data.AnyAdminsExist}");
+            foreach (var adminName in data.SampleAdmins)
+            {
+                _logger.LogInformation($"SampleAdmins {adminName}");
+            }
+
+
+
+
+            return new JsonResult(data, new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase, // Ensures camelCase
+                WriteIndented = false // Equivalent to Formatting.None
+            });
+        }
+
+        //[HttpGet]
+        //public async Task<IActionResult> DebugDataCheck()
         //{
-        //    //var ticket = _ticketList.FirstOrDefault(x => x.Id == id);
-
-        //    var ticket = await _context.Tickets
-        //     .Include(t => t.TicketWatchers)
-        //     .ThenInclude(tw => tw.Watcher)
-        //     .FirstOrDefaultAsync(t => t.Id == id);
-
-        //    if (ticket == null) return NotFound();
-
-        //    //var incident = new IncidentModel
-        //    //{
-        //    //    Ticket = new Model
-        //    //    {
-        //    //        Id = 001,
-        //    //        ServiceType = "Network",
-        //    //        Impact = "High",
-        //    //        ShortDescription = "Internet down",
-        //    //        Description = "Office internet not working since morning.",
-        //    //        Watchers = new List<Watcher> {
-        //    //            new Watcher { Name = "Sarah", Role = "Manager", Email = "sarah@gmail.com" },
-        //    //            new Watcher { Name = "Omar", Role = "Developer", Email = "omar@gmail.com" }
-        //    //        }
-        //    //    },
-        //    //    Watcher = new Watcher { Name = "John Doe" },
-        //    //    openDate = DateTime.Now,
-        //    //    closedDate = DateTime.Now,
-        //    //    State = "Assigned",
-        //    //    AdditionalComments = "no internet",
-        //    //    previousComments = new List<string>
-        //    //    {
-        //    //        "Internet was down for 3 hours. Please follow up.",
-        //    //        "Issue resolved at 10:45 AM. Monitoring ongoing.",
-        //    //        "Client reported the same error again after reboot."
-        //    //    }
-        //    //};
+        //    var totalIncidents = await _context.Incident.CountAsync();
+        //    var totalAdmins = await _context.Admins.CountAsync();
+        //    var incidentsWithAdmin = await _context.Incident.CountAsync(i => i.AssignedAdminId != null);
 
 
-        //    //ticket.TicketWatchers.Add(new TicketWatcher ( Name: "Sarah", Role : "Manager", Email: "sarah@gmail.com", Id : nid ));
-        //    //ticket.TicketWatchers.Add(new TicketWatcher ( Name: "Omar", Role: "Developer", Email: "omar@gmail.com", Id: nid + 1 ));
+        //    _logger.LogInformation(_context.Database.GetConnectionString());
+        //    _logger.LogInformation($"totalincident {totalIncidents}" );
+        //    _logger.LogInformation($"totalAdmins {totalAdmins}" );
 
-        //    //int counter = 0;
+        //    _logger.LogInformation($"incidentsWithAdmin {incidentsWithAdmin}" );
 
-        //    var incident = new Models.IncidentModel
+
+        //    return Ok(new
         //    {
-        //        Ticket = ticket,
-        //        Watcher = ticket.TicketWatchers.FirstOrDefault()?.Watcher,
-        //        //Watcher = ticket.Watchers?.FirstOrDefault() ?? new Watcher { Name = "Not Assigned" },
-        //        IncidentWatchers = ticket.TicketWatchers,
-        //        openDate = DateTime.Now,
-        //        //State = ticket.Watchers?.Any() == true ? "Assigned" : "Not Assigned",
-        //        State = "Assigned",
-        //        AdditionalComments =AdditionalComments,
-        //        closedDate = DateTime.Today,
-        //    };
-        //    _context.Incident.Add(incident);
-        //    await _context.SaveChangesAsync();
-        //    if (!string.IsNullOrWhiteSpace(AdditionalComments))
-        //    {
-        //        var previousComments = new PreviousComments
-        //        {
-        //            CommentText = AdditionalComments,
-        //            IncidentId = incident.Id,
-        //            ClosedTime = incident.closedDate
-        //        };
-
-        //        _context.PreviousComments.Add(previousComments);
-        //        await _context.SaveChangesAsync();
-        //    }
-        //    //incident.previousComments =
-        //    //    (incident.previousComments ?? new List<string>())
-        //    //    .Concat(string.IsNullOrWhiteSpace(incident.AdditionalComments)
-        //    //        ? Enumerable.Empty<string>()
-        //    //        : new[] { incident.AdditionalComments })
-        //    //    .ToList();
-        //    //using(var context = _context)
-        //    //{
-        //    //    context.Incident.Add(incident);
-        //    //    await context.SaveChangesAsync();
-        //    //}
-
-        //    return RedirectToAction("Incident", new { id = incident.Ticket.Id });
+        //        totalIncidents,
+        //        totalAdmins,
+        //        incidentsWithAdmin
+        //    });
         //}
 
+
+        [HttpGet]
+        public async Task<JsonResult> DebugTopAdminQuery()
+        {
+            var query = _context.Incident
+                .Include(i => i.AssignedAdmin)
+                .ThenInclude(a => a.Login)
+                .Where(i => (i.State == IncidentState.Done ||
+                             i.State == IncidentState.Accepted ||
+                             i.State == IncidentState.Rejected)
+                             && i.AssignedAdmin != null);
+
+            var results = await query
+                .Select(i => new {
+                    i.Id,
+                    State = i.State.ToString(),
+                    Admin = i.AssignedAdmin != null ? i.AssignedAdmin.Login.Name : null
+                })
+                .ToListAsync();
+
+            return Json(results);
+        }
+
+
+        [HttpGet]
+        public JsonResult GetStateValues()
+        {
+            return Json(new
+            {
+                DoneValue = (int)IncidentState.Done,
+                RejectedValue = (int)IncidentState.Rejected,
+                AcceptedValue = (int)IncidentState.Accepted,
+                ActualValues = _context.Incident
+                    .GroupBy(i => i.State)
+                    .Select(g => new { State = g.Key, Count = g.Count() })
+                    .ToList()
+            });
+        }
     }
 }

@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace TicketSystem.Views.Home
 {
-    public class WatchListModel : PageModel
+    public class AnalyticsModel : PageModel
     {
         public void OnGet()
         {

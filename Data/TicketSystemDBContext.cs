@@ -65,7 +65,10 @@ namespace TicketSystem.Data
                 .Property(i => i.State)
                 .HasConversion<int>();
 
-
+            modelBuilder.Entity<Admin>()
+            .HasOne(a => a.Login)
+            .WithMany()
+            .HasForeignKey(a => a.LoginId);
 
 
         }
